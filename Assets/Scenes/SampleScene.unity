@@ -329,10 +329,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 037a14fccefbafe429eafcd3de9c00d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridManager
-  width: 10
-  height: 10
   cellSize: 1.5
-  levelData: {fileID: 0}
+  levelData: {fileID: 11400000, guid: 5de6284af4306c94d8fe6cc22c9cfde8, type: 2}
+  showLevelPreview: 1
+  previewWalkable: {r: 0, g: 1, b: 0, a: 0.3}
+  previewBlocked: {r: 1, g: 0, b: 0, a: 0.4}
 --- !u!4 &381376064
 Transform:
   m_ObjectHideFlags: 0

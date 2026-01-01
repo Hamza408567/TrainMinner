@@ -5,6 +5,8 @@ public class TrainPathfinder : MonoBehaviour
 {
     public static TrainPathfinder Instance;
 
+    private List<GridNode> lastPath;
+
     private void Awake()
     {
         Instance = this;
@@ -13,7 +15,16 @@ public class TrainPathfinder : MonoBehaviour
     public List<GridNode> FindPath(GridNode start, GridNode target)
     {
         if (start == null || target == null)
+        {
+            Debug.LogWarning("Start or Target node is null");
             return null;
+        }
+
+        if (!start.walkable || !target.walkable)
+        {
+            Debug.LogWarning("Start or Target is not walkable");
+            return null;
+        }
 
         Queue<GridNode> queue = new Queue<GridNode>();
         Dictionary<GridNode, GridNode> cameFrom = new Dictionary<GridNode, GridNode>();
@@ -33,16 +44,20 @@ public class TrainPathfinder : MonoBehaviour
                 if (cameFrom.ContainsKey(neighbor))
                     continue;
 
-                queue.Enqueue(neighbor);
                 cameFrom[neighbor] = current;
+                queue.Enqueue(neighbor);
             }
         }
 
-        // No path
         if (!cameFrom.ContainsKey(target))
+        {
+            Debug.LogWarning("❌ Path not found");
+            lastPath = null;
             return null;
+        }
 
-        return ReconstructPath(cameFrom, target);
+        lastPath = ReconstructPath(cameFrom, target);
+        return lastPath;
     }
 
     private List<GridNode> ReconstructPath(
@@ -62,18 +77,19 @@ public class TrainPathfinder : MonoBehaviour
         return path;
     }
 
-    // Will be called later when stone breaks
-    public void RecalculatePath()
+    private void OnDrawGizmos()
     {
-        //Hooked later by TrainController
+        if (lastPath == null)
+            return;
+
+        Gizmos.color = new Color(0.6f, 0f, 0.8f, 1f); // Purple
+
+        foreach (GridNode node in lastPath)
+        {
+            Gizmos.DrawCube(
+                node.worldPos + Vector3.up * 0.2f,
+                Vector3.one * 0.5f
+            );
+        }
     }
-    /*private void OnDrawGizmos()
-    {
-        if (_lastPath == null) return;
-
-        Gizmos.color = Color.cyan;
-        foreach (var node in _lastPath)
-            Gizmos.DrawSphere(node.worldPos + Vector3.up * 0.2f, 0.1f);
-    }*/
-
 }

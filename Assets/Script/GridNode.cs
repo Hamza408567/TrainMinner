@@ -13,4 +13,14 @@ public class GridNode
         this.gridPos = gridPos;
         this.worldPos = worldPos;
     }
+
+    public void BreakStone()
+    {
+        if (stone != null)
+        {
+            Object.Destroy(stone.gameObject);
+            stone = null;
+        }
+        walkable = true; // make the cell walkable after stone is broken
+    }
 }

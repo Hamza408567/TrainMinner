@@ -3,88 +3,41 @@ using UnityEngine;
 
 public class TrainController : MonoBehaviour
 {
-    [Header("Movement")]
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private float rotateSpeed = 10f;
+    public float speed = 3f;
 
-    [Header("Grid Positions")]
-    public Vector2Int startGridPos;
-    public Vector2Int targetGridPos;
+    private List<GridNode> loop;
+    private int index;
 
-    private List<GridNode> currentPath;
-    private int pathIndex;
-    private bool isMoving;
-
-    private void Start()
+    void Start()
     {
-        CalculatePath();
-    }
+        loop = TrainLoopFinder.Instance.FindLoop();
 
-    private void Update()
-    {
-        if (!isMoving || currentPath == null || pathIndex >= currentPath.Count)
-            return;
-
-        MoveAlongPath();
-    }
-
-    void CalculatePath()
-    {
-        GridNode startNode = GridManager.Instance.GetNode(startGridPos);
-        GridNode targetNode = GridManager.Instance.GetNode(targetGridPos);
-
-        currentPath = TrainPathfinder.Instance.FindPath(startNode, targetNode);
-        pathIndex = 0;
-
-        if (currentPath == null || currentPath.Count == 0)
+        if (loop == null || loop.Count < 2)
         {
-            Debug.LogWarning("No path found for train");
-            isMoving = false;
+            Debug.LogError("No loop to move on!");
+            enabled = false;
             return;
         }
 
-        isMoving = true;
+        transform.position = loop[0].worldPos;
+        index = 1;
     }
 
-    void MoveAlongPath()
+    void Update()
     {
-        GridNode targetNode = currentPath[pathIndex];
-        Vector3 targetPos = targetNode.worldPos;
-
-        // Move
+        Vector3 target = loop[index].worldPos;
         transform.position = Vector3.MoveTowards(
             transform.position,
-            targetPos,
-            moveSpeed * Time.deltaTime
+            target,
+            speed * Time.deltaTime
         );
 
-        // Rotate
-        Vector3 dir = (targetPos - transform.position).normalized;
-        if (dir != Vector3.zero)
+        if (Vector3.Distance(transform.position, target) < 0.05f)
         {
-            Quaternion rot = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                rot,
-                rotateSpeed * Time.deltaTime
-            );
+            index++;
+
+            if (index >= loop.Count)
+                index = 1; // loop forever
         }
-
-        // Reached node
-        if (Vector3.Distance(transform.position, targetPos) < 0.05f)
-        {
-            pathIndex++;
-        }
-    }
-
-    // 🔥 This will be called later when stone breaks
-    public void SetNewPath(List<GridNode> newPath)
-    {
-        if (newPath == null || newPath.Count == 0)
-            return;
-
-        currentPath = newPath;
-        pathIndex = 0;
-        isMoving = true;
     }
 }

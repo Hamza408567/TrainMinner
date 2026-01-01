@@ -5,13 +5,14 @@ using UnityEngine;
 public class GridManager : MonoBehaviour
 {
     public static GridManager Instance;
-
+    [SerializeField] private GameObject stonePrefab;
     [Header("Grid Settings")]
-    [SerializeField] private int width = 10;
-    [SerializeField] private int height = 10;
     [SerializeField] private float cellSize = 1f;
-    [SerializeField] private LevelData levelData;
+    [InlineEditor,SerializeField] private LevelData levelData;
+    [SerializeField] private bool showLevelPreview = true;
 
+    [SerializeField] private Color previewWalkable = new Color(0f, 1f, 0f, 0.3f);
+    [SerializeField] private Color previewBlocked = new Color(1f, 0f, 0f, 0.4f);
 
     public Dictionary<Vector2Int, GridNode> Grid { get; private set; }
 
@@ -43,28 +44,34 @@ public class GridManager : MonoBehaviour
     {
         Grid = new Dictionary<Vector2Int, GridNode>();
 
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < levelData.width; x++)
         {
-            for (int y = 0; y < height; y++)
+            for (int y = 0; y < levelData.height; y++)
             {
                 Vector2Int gridPos = new Vector2Int(x, y);
-                Vector3 worldPos = transform.position + new Vector3(
-                    x * cellSize, 0f, y * cellSize
-                );
+                Vector3 worldPos = transform.position + new Vector3(x * cellSize, 0f, y * cellSize);
 
                 GridNode node = new GridNode(gridPos, worldPos);
 
-                // INITIAL STATE FROM LEVEL DATA
-                if (levelData != null && levelData.blockedCells.Contains(gridPos))
+                // Use LevelData to set walkable
+                GridCell cellData = levelData.GetCell(x, y);
+                if (cellData != null)
                 {
-                    node.walkable = false;
+                    node.walkable = cellData.walkable;
+
+                    // Spawn stone if cell is blocked
+                    if (!cellData.walkable && stonePrefab != null)
+                    {
+                        GameObject stoneObj = Instantiate(stonePrefab, worldPos + Vector3.up * 0.5f, Quaternion.identity, transform);
+                        node.stone = stoneObj.GetComponent<Stone>();
+                    }
                 }
 
                 Grid.Add(gridPos, node);
             }
         }
     }
-
+    
     public GridNode GetNode(Vector2Int pos)
     {
         Grid.TryGetValue(pos, out GridNode node);
@@ -95,35 +102,67 @@ public class GridManager : MonoBehaviour
 
     public void OnGridUpdated()
     {
-        TrainPathfinder.Instance.RecalculatePath();
+       // TrainPathfinder.Instance.RecalculatePath();
     }
-    private void OnDrawGizmos()
+    [Button]
+    public void DebugNeighbors()
     {
-        if (Grid == null) return;
-
         foreach (var node in Grid.Values)
         {
-            Vector3 center = node.worldPos + new Vector3(0, 0.05f, 0);
-            Vector3 size = new Vector3(cellSize, 0.1f, cellSize);
+            if (!node.walkable)
+                continue;
 
-            if (node.walkable)
-            {
-                // Walkable → green wireframe
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireCube(center, size);
-            }
-            else
-            {
-                // Non-walkable → red filled + wireframe
-                Gizmos.color = new Color(1f, 0f, 0f, 0.35f);
-                Gizmos.DrawCube(center, size);
+            int count = GetNeighbors(node).Count;
 
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireCube(center, size);
+            if (count != 2)
+            {
+                Debug.LogWarning(
+                    $"❌ Not loop tile at {node.gridPos} → neighbors: {count}"
+                );
             }
         }
     }
 
+    private void OnDrawGizmos()
+    {
+        if (!showLevelPreview || levelData == null)
+            return;
 
+        for (int x = 0; x < levelData.width; x++)
+        {
+            for (int y = 0; y < levelData.height; y++)
+            {
+                Vector2Int gridPos = new Vector2Int(x, y);
+                Vector3 worldPos = transform.position + new Vector3(
+                    x * cellSize,
+                    0f,
+                    y * cellSize
+                );
 
+                Vector3 center = worldPos + new Vector3(0, 0.05f, 0);
+                Vector3 size = new Vector3(cellSize, 0.1f, cellSize);
+
+                // ✅ Get the cell from LevelData
+                GridCell cell = levelData.GetCell(x, y);
+                bool blocked = (cell != null) ? !cell.walkable : false; // default walkable
+
+                if (blocked)
+                {
+                    Gizmos.color = previewBlocked;
+                    Gizmos.DrawCube(center, size);
+
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireCube(center, size);
+                }
+                else
+                {
+                    Gizmos.color = previewWalkable;
+                    Gizmos.DrawCube(center, size);
+
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawWireCube(center, size);
+                }
+            }
+        }
+    }
 }

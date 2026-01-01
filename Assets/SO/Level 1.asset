@@ -1,0 +1,317 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95bc99a89f114a04faccf1d870cc4099, type: 3}
+  m_Name: Level 1
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  width: 10
+  height: 10
+  cells:
+  - row: 0
+    column: 0
+    walkable: 0
+  - row: 0
+    column: 1
+    walkable: 0
+  - row: 0
+    column: 2
+    walkable: 0
+  - row: 0
+    column: 3
+    walkable: 0
+  - row: 0
+    column: 4
+    walkable: 0
+  - row: 0
+    column: 5
+    walkable: 0
+  - row: 0
+    column: 6
+    walkable: 0
+  - row: 0
+    column: 7
+    walkable: 0
+  - row: 0
+    column: 8
+    walkable: 0
+  - row: 0
+    column: 9
+    walkable: 0
+  - row: 1
+    column: 0
+    walkable: 0
+  - row: 1
+    column: 1
+    walkable: 0
+  - row: 1
+    column: 2
+    walkable: 0
+  - row: 1
+    column: 3
+    walkable: 0
+  - row: 1
+    column: 4
+    walkable: 0
+  - row: 1
+    column: 5
+    walkable: 0
+  - row: 1
+    column: 6
+    walkable: 0
+  - row: 1
+    column: 7
+    walkable: 0
+  - row: 1
+    column: 8
+    walkable: 0
+  - row: 1
+    column: 9
+    walkable: 0
+  - row: 2
+    column: 0
+    walkable: 0
+  - row: 2
+    column: 1
+    walkable: 0
+  - row: 2
+    column: 2
+    walkable: 1
+  - row: 2
+    column: 3
+    walkable: 1
+  - row: 2
+    column: 4
+    walkable: 1
+  - row: 2
+    column: 5
+    walkable: 1
+  - row: 2
+    column: 6
+    walkable: 1
+  - row: 2
+    column: 7
+    walkable: 1
+  - row: 2
+    column: 8
+    walkable: 0
+  - row: 2
+    column: 9
+    walkable: 0
+  - row: 3
+    column: 0
+    walkable: 0
+  - row: 3
+    column: 1
+    walkable: 0
+  - row: 3
+    column: 2
+    walkable: 1
+  - row: 3
+    column: 3
+    walkable: 0
+  - row: 3
+    column: 4
+    walkable: 0
+  - row: 3
+    column: 5
+    walkable: 0
+  - row: 3
+    column: 6
+    walkable: 0
+  - row: 3
+    column: 7
+    walkable: 1
+  - row: 3
+    column: 8
+    walkable: 0
+  - row: 3
+    column: 9
+    walkable: 0
+  - row: 4
+    column: 0
+    walkable: 0
+  - row: 4
+    column: 1
+    walkable: 0
+  - row: 4
+    column: 2
+    walkable: 1
+  - row: 4
+    column: 3
+    walkable: 0
+  - row: 4
+    column: 4
+    walkable: 0
+  - row: 4
+    column: 5
+    walkable: 0
+  - row: 4
+    column: 6
+    walkable: 0
+  - row: 4
+    column: 7
+    walkable: 1
+  - row: 4
+    column: 8
+    walkable: 0
+  - row: 4
+    column: 9
+    walkable: 0
+  - row: 5
+    column: 0
+    walkable: 0
+  - row: 5
+    column: 1
+    walkable: 0
+  - row: 5
+    column: 2
+    walkable: 1
+  - row: 5
+    column: 3
+    walkable: 0
+  - row: 5
+    column: 4
+    walkable: 0
+  - row: 5
+    column: 5
+    walkable: 0
+  - row: 5
+    column: 6
+    walkable: 0
+  - row: 5
+    column: 7
+    walkable: 1
+  - row: 5
+    column: 8
+    walkable: 0
+  - row: 5
+    column: 9
+    walkable: 0
+  - row: 6
+    column: 0
+    walkable: 0
+  - row: 6
+    column: 1
+    walkable: 0
+  - row: 6
+    column: 2
+    walkable: 1
+  - row: 6
+    column: 3
+    walkable: 0
+  - row: 6
+    column: 4
+    walkable: 0
+  - row: 6
+    column: 5
+    walkable: 0
+  - row: 6
+    column: 6
+    walkable: 0
+  - row: 6
+    column: 7
+    walkable: 1
+  - row: 6
+    column: 8
+    walkable: 0
+  - row: 6
+    column: 9
+    walkable: 0
+  - row: 7
+    column: 0
+    walkable: 0
+  - row: 7
+    column: 1
+    walkable: 0
+  - row: 7
+    column: 2
+    walkable: 1
+  - row: 7
+    column: 3
+    walkable: 1
+  - row: 7
+    column: 4
+    walkable: 1
+  - row: 7
+    column: 5
+    walkable: 1
+  - row: 7
+    column: 6
+    walkable: 1
+  - row: 7
+    column: 7
+    walkable: 1
+  - row: 7
+    column: 8
+    walkable: 0
+  - row: 7
+    column: 9
+    walkable: 0
+  - row: 8
+    column: 0
+    walkable: 0
+  - row: 8
+    column: 1
+    walkable: 0
+  - row: 8
+    column: 2
+    walkable: 0
+  - row: 8
+    column: 3
+    walkable: 0
+  - row: 8
+    column: 4
+    walkable: 0
+  - row: 8
+    column: 5
+    walkable: 0
+  - row: 8
+    column: 6
+    walkable: 0
+  - row: 8
+    column: 7
+    walkable: 0
+  - row: 8
+    column: 8
+    walkable: 0
+  - row: 8
+    column: 9
+    walkable: 0
+  - row: 9
+    column: 0
+    walkable: 0
+  - row: 9
+    column: 1
+    walkable: 0
+  - row: 9
+    column: 2
+    walkable: 0
+  - row: 9
+    column: 3
+    walkable: 0
+  - row: 9
+    column: 4
+    walkable: 0
+  - row: 9
+    column: 5
+    walkable: 0
+  - row: 9
+    column: 6
+    walkable: 0
+  - row: 9
+    column: 7
+    walkable: 0
+  - row: 9
+    column: 8
+    walkable: 0
+  - row: 9
+    column: 9
+    walkable: 0
