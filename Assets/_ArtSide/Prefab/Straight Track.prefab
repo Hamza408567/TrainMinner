@@ -52,6 +52,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: Straight Track
       objectReference: {fileID: 0}
+    - target: {fileID: 4291672079613220478, guid: 6501f6c053e0cfe44bb40992ee433251, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4291672079613220478, guid: 6501f6c053e0cfe44bb40992ee433251, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4291672079613220478, guid: 6501f6c053e0cfe44bb40992ee433251, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4291672079613220478, guid: 6501f6c053e0cfe44bb40992ee433251, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 90
+      objectReference: {fileID: 0}
     - target: {fileID: 5111927389677513692, guid: 6501f6c053e0cfe44bb40992ee433251, type: 3}
       propertyPath: m_IsActive
       value: 0

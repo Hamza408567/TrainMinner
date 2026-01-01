@@ -4,91 +4,118 @@ using UnityEngine;
 public class TrainLoopFinder : MonoBehaviour
 {
     public static TrainLoopFinder Instance;
-
-    private List<GridNode> loop;
+    public List<GridNode> Loop { get; private set; }
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
         Instance = this;
     }
 
-    /// <summary>
-    /// Finds and returns a closed loop of walkable GridNodes.
-    /// </summary>
     public List<GridNode> FindLoop()
     {
-        loop = null;
+        Loop = null;
 
         foreach (GridNode start in GridManager.Instance.Grid.Values)
         {
             if (!start.walkable)
                 continue;
 
-            List<GridNode> path = TraceLoop(start);
-            if (path != null && path.Count > 3)
+            var neighbors = GridManager.Instance.GetNeighbors(start);
+            if (neighbors.Count != 2)
+                continue;
+
+            // 🔁 Try BOTH directions
+            foreach (GridNode firstNext in neighbors)
             {
-                loop = path;
-                Debug.Log("✅ Loop found with " + loop.Count + " nodes");
-                return loop;
+                List<GridNode> path = WalkClockwise(start);
+                if (path != null)
+                {
+                    Loop = path;
+                    Debug.Log("✅ Closed loop found");
+                    return Loop;
+                }
             }
         }
 
-        Debug.LogError("❌ No loop found in grid");
+        Debug.LogError("❌ Loop exists but traversal failed");
         return null;
     }
 
-    private List<GridNode> TraceLoop(GridNode start)
+    private List<GridNode> WalkClockwise(GridNode start)
     {
-        HashSet<GridNode> visited = new HashSet<GridNode>();
         List<GridNode> path = new List<GridNode>();
+        HashSet<GridNode> visited = new HashSet<GridNode>();
 
         GridNode current = start;
         GridNode previous = null;
 
+        path.Add(current);
+        visited.Add(current);
+
         while (true)
         {
-            if (visited.Contains(current))
-            {
-                if (current == start && path.Count > 3)
-                    return path;
-
-                return null;
-            }
-
-            visited.Add(current);
-            path.Add(current);
-
             List<GridNode> neighbors = GridManager.Instance.GetNeighbors(current);
 
-            // Remove where we came from
+            // Remove previous to avoid going back
             if (previous != null)
                 neighbors.Remove(previous);
 
-            if (neighbors.Count != 1)
+            if (neighbors.Count == 0)
+                return null; // dead end
+
+            // Sort neighbors in clockwise order relative to current node
+            neighbors.Sort((a, b) =>
+            {
+                Vector2Int dirA = a.gridPos - current.gridPos;
+                Vector2Int dirB = b.gridPos - current.gridPos;
+
+                int GetDirOrder(Vector2Int dir)
+                {
+                    if (dir == Vector2Int.right) return 0;
+                    if (dir == Vector2Int.down) return 1;
+                    if (dir == Vector2Int.left) return 2;
+                    if (dir == Vector2Int.up) return 3;
+                    return 4;
+                }
+
+                return GetDirOrder(dirA).CompareTo(GetDirOrder(dirB));
+            });
+
+            GridNode next = neighbors[0];
+
+            // If we returned to start, loop complete
+            if (next == start && path.Count > 2)
+            {
+                path.Add(start);
+                return path;
+            }
+
+            // Already visited → stuck, fail
+            if (visited.Contains(next))
                 return null;
 
+            path.Add(next);
+            visited.Add(next);
+
             previous = current;
-            current = neighbors[0];
+            current = next;
         }
     }
 
+
     private void OnDrawGizmos()
     {
-        if (loop == null)
+        if (Loop == null)
             return;
 
         Gizmos.color = Color.magenta;
 
-        for (int i = 0; i < loop.Count; i++)
+        for (int i = 0; i < Loop.Count - 1; i++)
         {
-            Vector3 from = loop[i].worldPos + Vector3.up * 0.2f;
-            Vector3 to = loop[(i + 1) % loop.Count].worldPos + Vector3.up * 0.2f;
-            Gizmos.DrawLine(from, to);
+            Gizmos.DrawLine(
+                Loop[i].worldPos + Vector3.up * 0.25f,
+                Loop[i + 1].worldPos + Vector3.up * 0.25f
+            );
         }
     }
 }
