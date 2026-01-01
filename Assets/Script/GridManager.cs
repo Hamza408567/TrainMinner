@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
+//using Sirenix.OdinInspector;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -11,7 +11,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Transform railParent; // optional, organize rails under a parent
     [Header("Grid Settings")]
     [SerializeField] private float cellSize = 1f;
-    [InlineEditor, SerializeField] private LevelData levelData;
+    [ SerializeField] private LevelData levelData;
     [SerializeField] private bool showLevelPreview = true;
 
     [SerializeField] private Color previewWalkable = new Color(0f, 1f, 0f, 0.3f);
@@ -30,16 +30,16 @@ public class GridManager : MonoBehaviour
         SpawnRailsAligned();// Compute the loop at start
     }
 
-    [Button(ButtonSizes.Large)]
-    [GUIColor(0.3f, 0.9f, 0.3f)]
+   // [Button(ButtonSizes.Large)]
+   // [GUIColor(0.3f, 0.9f, 0.3f)]
     public void GenerateGrid()
     {
         BuildGrid();
         Debug.Log("Grid Generated");
     }
 
-    [Button(ButtonSizes.Large)]
-    [GUIColor(1f, 0.4f, 0.4f)]
+   // [Button(ButtonSizes.Large)]
+    //[GUIColor(1f, 0.4f, 0.4f)]
     public void ClearGrid()
     {
         if (Grid != null)
@@ -123,7 +123,7 @@ public class GridManager : MonoBehaviour
        // TrainPathfinder.Instance.RecalculatePath();
     }
 
-    [Button]
+  //  [Button]
     [ContextMenu("DEBUG LOOP VALIDITY")]
     public void DebugLoopValidity()
     {
@@ -154,64 +154,68 @@ public class GridManager : MonoBehaviour
         }
     }
  
-    [Button("Spawn Rails with Corners")]
-    public void SpawnRailsAligned()
+  //  [Button("Spawn Rails with Corners Fixed")]
+public void SpawnRailsAligned()
+{
+    if (PrecomputedLoop == null || PrecomputedLoop.Count < 3)
     {
-        if (PrecomputedLoop == null || PrecomputedLoop.Count < 3)
-        {
-            Debug.LogError("Need at least 3 nodes in loop to spawn rails!");
-            return;
-        }
-
-        // Clear previous rails
-        if (railParent != null)
-        {
-            for (int i = railParent.childCount - 1; i >= 0; i--)
-                DestroyImmediate(railParent.GetChild(i).gameObject);
-        }
-
-        int count = PrecomputedLoop.Count;
-
-        for (int i = 0; i < count - 1; i++)
-        {
-            GridNode prev = PrecomputedLoop[(i - 1 + count) % count];
-            GridNode current = PrecomputedLoop[i];
-            GridNode next = PrecomputedLoop[(i + 1) % count];
-
-            Vector3 dir1 = (current.worldPos - prev.worldPos).normalized;
-            Vector3 dir2 = (next.worldPos - current.worldPos).normalized;
-
-            GameObject railPrefabToUse;
-            Quaternion rotation;
-
-            // Straight if direction almost same
-            // Straight if direction almost same
-            if (Vector3.Dot(dir1, dir2) > 0.99f)
-            {
-                railPrefabToUse = straightRailPrefab;
-                rotation = Quaternion.LookRotation(dir2, Vector3.up); // straight rails stay same
-            }
-            else
-            {
-                railPrefabToUse = cornerRailPrefab;
-
-                // Determine left/right turn using cross product
-                float cross = Vector3.Cross(dir1, dir2).y;
-
-                if (cross > 0) // left turn
-                    rotation = Quaternion.LookRotation(dir1, Vector3.up) * Quaternion.Euler(0, 90, 0);
-                else           // right turn
-                    rotation = Quaternion.LookRotation(dir1, Vector3.up) * Quaternion.Euler(0, -90, 0);
-            }
-
-
-            Vector3 position = current.worldPos;
-            GameObject rail = Instantiate(railPrefabToUse, position, rotation, railParent);
-            rail.name = $"Rail_{i}_{railPrefabToUse.name}";
-        }
-
-        Debug.Log("✅ Rails aligned along loop!");
+        Debug.LogError("Need at least 3 nodes in loop to spawn rails!");
+        return;
     }
+
+    // Clear previous rails
+    if (railParent != null)
+    {
+        for (int i = railParent.childCount - 1; i >= 0; i--)
+            DestroyImmediate(railParent.GetChild(i).gameObject);
+    }
+
+    int count = PrecomputedLoop.Count;
+
+    for (int i = 0; i < count - 1; i++)
+    {
+        GridNode prev = PrecomputedLoop[(i - 1 + count) % count];
+        GridNode current = PrecomputedLoop[i];
+        GridNode next = PrecomputedLoop[(i + 1) % count];
+
+        Vector3 dir1 = (current.worldPos - prev.worldPos).normalized; // incoming
+        Vector3 dir2 = (next.worldPos - current.worldPos).normalized; // outgoing
+
+        GameObject railPrefabToUse;
+        Quaternion rotation;
+
+        // Straight if direction almost same
+        if (Vector3.Dot(dir1, dir2) > 0.99f)
+        {
+            railPrefabToUse = straightRailPrefab;
+            rotation = Quaternion.LookRotation(dir2, Vector3.up);
+        }
+        else
+        {
+            railPrefabToUse = cornerRailPrefab;
+
+            // Determine turn direction using cross product
+            float cross = Vector3.Cross(dir1, dir2).y;
+
+            // Base rotation along incoming track
+            rotation = Quaternion.LookRotation(dir2, Vector3.up);
+
+            // Rotate ±90° to match the bend
+            rotation *= Quaternion.Euler(0, cross > 0 ? 90f : -90f, 0);
+
+            // Optional: adjust prefab offset if your model's Z-axis is not aligned correctly
+            // rotation *= Quaternion.Euler(0, 0, 0); // tweak if needed
+        }
+
+        // Instantiate rail
+        Vector3 position = current.worldPos;
+        GameObject rail = Instantiate(railPrefabToUse, position, rotation, railParent);
+        rail.name = $"Rail_{i}_{railPrefabToUse.name}";
+    }
+
+    Debug.Log("✅ Rails aligned along loop (fixed corners)!");
+}
+
     private void OnDrawGizmos()
     {
         if (!showLevelPreview || levelData == null)

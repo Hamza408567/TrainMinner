@@ -101,7 +101,7 @@ MonoBehaviour:
     walkable: 1
   - row: 2
     column: 8
-    walkable: 0
+    walkable: 1
   - row: 2
     column: 9
     walkable: 0
@@ -128,7 +128,7 @@ MonoBehaviour:
     walkable: 0
   - row: 3
     column: 7
-    walkable: 1
+    walkable: 0
   - row: 3
     column: 8
     walkable: 1
@@ -218,7 +218,7 @@ MonoBehaviour:
     walkable: 0
   - row: 6
     column: 7
-    walkable: 1
+    walkable: 0
   - row: 6
     column: 8
     walkable: 1
@@ -251,7 +251,7 @@ MonoBehaviour:
     walkable: 1
   - row: 7
     column: 8
-    walkable: 0
+    walkable: 1
   - row: 7
     column: 9
     walkable: 0

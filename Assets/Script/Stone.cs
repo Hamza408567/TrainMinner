@@ -1,11 +1,25 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Stone : MonoBehaviour
 {
-    public int hp = 3;
+    [Header("Health")]
+    [SerializeField] private int maxHp = 6;
+    private int currentHp;
+   // [SerializeField] private List<GameObject> damageVariants;
+    public List<GameObject> damageVariant;
+
     [HideInInspector] public GridNode node;
 
-    private void Start()
+    // =============================
+    void Awake()
+    {
+        currentHp = maxHp;
+        UpdateVariant();
+    }
+
+    void Start()
     {
         // Assign this stone to the grid node
         Vector2Int gridPos = new Vector2Int(
@@ -16,22 +30,53 @@ public class Stone : MonoBehaviour
         node = GridManager.Instance.GetNode(gridPos);
         if (node != null)
         {
-            node.walkable = false; // Block the train
+            node.walkable = false;
             node.stone = this;
         }
     }
 
-    // Call this when train hits the stone
+    // =============================
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("cutter"))
+        {
+            Debug.LogError("damage");
+            Damage(1); // default cutter damage
+        }
+    }
+    
+    // =============================
     public void Damage(int dmg)
     {
-        hp -= dmg;
+        if (currentHp <= 0) return;
 
-        if (hp <= 0)
+        currentHp -= dmg;
+        currentHp = Mathf.Clamp(currentHp, 0, maxHp);
+
+        UpdateVariant();
+
+        if (currentHp <= 0)
         {
             Break();
         }
     }
 
+    // =============================
+    void UpdateVariant()
+    {
+        if (damageVariant == null || damageVariant.Count == 0)
+            return;
+
+        int damageIndex = maxHp - currentHp;
+        damageIndex = Mathf.Clamp(damageIndex, 0, damageVariant.Count - 1);
+
+        for (int i = 0; i < damageVariant.Count; i++)
+        {
+            damageVariant[i].SetActive(i == damageIndex);
+        }
+    }
+
+    // =============================
     void Break()
     {
         if (node != null)
@@ -42,7 +87,6 @@ public class Stone : MonoBehaviour
 
         Destroy(gameObject);
 
-        // Notify grid that it has changed
         GridManager.Instance.OnGridUpdated();
     }
 }

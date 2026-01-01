@@ -3,64 +3,200 @@ using UnityEngine;
 
 public class TrainController : MonoBehaviour
 {
+    [Header("Engine Settings")]
     public float speed = 3f;
-    public bool clockwise = true; // ✅ Toggle clockwise or counter-clockwise
+    public bool clockwise = true;
+    [SerializeField] private float engineRotationSpeed = 8f;
+
+    [Header("Buggy Settings")]
+    public GameObject buggyPrefab;
+    public int numberOfBuggies = 3;
+
+    public float baseFollowDistance = 1.5f;
+    public float distanceMultiplier = 1.0f;
+
+    [SerializeField] private float buggyMoveSmoothness = 12f;
+    [SerializeField] private float buggyRotationSmoothness = 10f;
 
     private List<GridNode> loop;
-    private int currentIndex = 0;
+    private int currentIndex;
 
-    [SerializeField] private float rotationSpeed = 5f; // How fast the train rotates
+    private List<Transform> buggies = new List<Transform>();
+    private List<Vector3> positionHistory = new List<Vector3>();
 
+    // =============================
     void Start()
     {
-        // Use precomputed loop from GridManager
         loop = GridManager.Instance.PrecomputedLoop;
 
         if (loop == null || loop.Count < 2)
         {
-            Debug.LogError("No precomputed loop found for the train!");
+            Debug.LogError("No precomputed loop found!");
             enabled = false;
             return;
         }
 
-        // Start at first node
         transform.position = loop[0].worldPos;
-        currentIndex = clockwise ? 1 : loop.Count - 1; // move towards next node
+        currentIndex = clockwise ? 1 : loop.Count - 1;
+
+        positionHistory.Clear();
+        positionHistory.Add(transform.position);
+
+        SpawnBuggies();
     }
 
+    // =============================
     void Update()
     {
-        if (loop == null || loop.Count < 2)
-            return;
+        MoveEngine();
+        RecordHistory();
+        MoveBuggies();
+    }
 
+    void LateUpdate()
+    {
+      
+    }
+
+    // =============================
+    void MoveEngine()
+    {
         Vector3 target = loop[currentIndex].worldPos;
 
-        // Move towards target
-        transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            target,
+            speed * Time.deltaTime
+        );
 
-        // Rotate train to face movement direction
-        Vector3 direction = (target - transform.position).normalized;
-        if (direction != Vector3.zero)
+        Vector3 moveDir = (target - transform.position).normalized;
+        if (moveDir.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            Quaternion rot = Quaternion.LookRotation(moveDir, Vector3.up);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                rot,
+                engineRotationSpeed * Time.deltaTime
+            );
         }
 
-        // Check if reached current target
         if (Vector3.Distance(transform.position, target) < 0.05f)
         {
             if (clockwise)
             {
-                currentIndex++;
-                if (currentIndex >= loop.Count)
-                    currentIndex = 1; // wrap around
+                currentIndex = (currentIndex + 1) % loop.Count;
+                if (currentIndex == 0) currentIndex = 1;
             }
             else
             {
                 currentIndex--;
-                if (currentIndex < 0)
-                    currentIndex = loop.Count - 2; // wrap around
+                if (currentIndex <= 0) currentIndex = loop.Count - 2;
             }
+        }
+    }
+
+    // =============================
+    void RecordHistory()
+    {
+        if (positionHistory.Count == 0 ||
+            Vector3.Distance(positionHistory[^1], transform.position) > 0.02f)
+        {
+            positionHistory.Add(transform.position);
+        }
+
+        // Distance-based history trimming (NO jitter)
+        float maxDistance =
+            baseFollowDistance * distanceMultiplier * (numberOfBuggies + 2);
+
+        float dist = 0f;
+        for (int i = positionHistory.Count - 1; i > 0; i--)
+        {
+            dist += Vector3.Distance(positionHistory[i], positionHistory[i - 1]);
+            if (dist > maxDistance)
+            {
+                positionHistory.RemoveRange(0, i);
+                break;
+            }
+        }
+    }
+
+    // =============================
+    void MoveBuggies()
+    {
+        for (int i = 0; i < buggies.Count; i++)
+        {
+            float distance =
+                baseFollowDistance * distanceMultiplier * (i + 1);
+
+            Vector3 targetPos = GetPositionAlongHistory(distance);
+
+            Transform buggy = buggies[i];
+
+            // Smooth & stable movement
+            buggy.position = Vector3.Lerp(
+                buggy.position,
+                targetPos,
+                buggyMoveSmoothness * Time.deltaTime
+            );
+
+            // Face movement direction
+            Vector3 moveDir = targetPos - buggy.position;
+            if (moveDir.sqrMagnitude > 0.0001f)
+            {
+                Quaternion rot = Quaternion.LookRotation(moveDir.normalized, Vector3.up);
+                buggy.rotation = Quaternion.Slerp(
+                    buggy.rotation,
+                    rot,
+                    buggyRotationSmoothness * Time.deltaTime
+                );
+            }
+        }
+    }
+
+    // =============================
+    Vector3 GetPositionAlongHistory(float distance)
+    {
+        float remaining = distance;
+
+        for (int i = positionHistory.Count - 1; i > 0; i--)
+        {
+            float seg = Vector3.Distance(
+                positionHistory[i],
+                positionHistory[i - 1]
+            );
+
+            if (seg >= remaining)
+            {
+                float t = remaining / seg;
+                return Vector3.Lerp(
+                    positionHistory[i],
+                    positionHistory[i - 1],
+                    t
+                );
+            }
+
+            remaining -= seg;
+        }
+
+        return positionHistory[0];
+    }
+
+    // =============================
+    void SpawnBuggies()
+    {
+        buggies.Clear();
+
+        for (int i = 0; i < numberOfBuggies; i++)
+        {
+            GameObject obj = Instantiate(
+                buggyPrefab,
+                transform.position,
+                transform.rotation,
+                transform.parent
+            );
+
+            obj.name = $"Buggy_{i + 1}";
+            buggies.Add(obj.transform);
         }
     }
 }
