@@ -28,7 +28,7 @@ public class LevelData : ScriptableObject
     public int height = 10;
     public List<GridCell> cells = new();
     public List<GridCell> DefauldGridCells = new();
-    
+    public bool isDefaults;
     public void InitializeGrid()
     {
         DefauldGridCells.Clear();
@@ -41,13 +41,17 @@ public class LevelData : ScriptableObject
             }
         }
     }
+
     public void OnEnable()
     {
-        cells = new List<GridCell>();
-
-        foreach (var cell in DefauldGridCells)
+        if (isDefaults)
         {
-            cells.Add(new GridCell(cell)); // deep copy
+            cells = new List<GridCell>();
+
+            foreach (var cell in DefauldGridCells)
+            {
+                cells.Add(new GridCell(cell)); // deep copy
+            }
         }
     }
 
