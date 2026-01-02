@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class TrainController : MonoBehaviour
 {
@@ -24,6 +25,7 @@ public class TrainController : MonoBehaviour
 
     private List<Transform> buggies = new List<Transform>();
     private List<Vector3> positionHistory = new List<Vector3>();
+    private bool isMoving = false;
 
     // =============================
     void OnEnable()
@@ -131,17 +133,19 @@ private Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
     // =============================
     void Update()
     {
-        MoveEngine();
-        RecordHistory();
-        MoveBuggies();
+        // Check if left mouse button or primary touch is pressed
+        isMoving = Mouse.current.leftButton.isPressed || 
+                   (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed);
+
+
+        if (isMoving)
+        {
+            MoveEngine();
+            RecordHistory();
+            MoveBuggies();
+        }
     }
 
-    void LateUpdate()
-    {
-      
-    }
-
-    // =============================
     void MoveEngine()
     {
         Vector3 target = loop[currentIndex].worldPos;

@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
+    [Range(2,10)]
+    public int updateAfterStone=4;
     public static GridManager Instance;
     [SerializeField] private PreComputedLoop preComputedLoop;
     [SerializeField] private SpawnRailsAligned railsAligned;
@@ -17,7 +19,7 @@ public class GridManager : MonoBehaviour
 
     public GridNode[,] Grid { get; private set; } // 2D array now
     public static event System.Action OnLoopUpdated;
-
+    private int coutstone;
     private void Awake()
     {
         Instance = this;
@@ -27,6 +29,16 @@ public class GridManager : MonoBehaviour
         BuildGrid();
         preComputedLoop.PrecomputeLoop();
         railsAligned.SpawnRails();
+    }
+
+    public void GridUpdateAfter4Stonedistroy()
+    {
+        coutstone++;
+        if (coutstone >= updateAfterStone)
+        {
+            coutstone = 0;
+            OnGridUpdated();
+        }
     }
 
     public void OnGridUpdated()

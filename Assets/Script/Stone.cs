@@ -64,7 +64,7 @@ public class Stone : MonoBehaviour
             node.walkable = true;
             node.stone = null;
         }
+        GridManager.Instance.GridUpdateAfter4Stonedistroy();
         Destroy(gameObject);
-        //GridManager.Instance.OnGridUpdated();
     }
 }

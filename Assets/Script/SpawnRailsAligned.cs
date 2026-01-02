@@ -112,8 +112,7 @@ public class SpawnRailsAligned : MonoBehaviour
         }
 
         for (int i = railParent.childCount - 1; i >= 0; i--)
-            DestroyImmediate(railParent.GetChild(i).gameObject);
-
+            Destroy(railParent.GetChild(i).gameObject);
         Debug.Log("🧹 Rails cleared");
     }
 //------------------------------------------------------
