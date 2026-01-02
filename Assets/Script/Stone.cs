@@ -87,6 +87,6 @@ public class Stone : MonoBehaviour
 
         Destroy(gameObject);
 
-        GridManager.Instance.OnGridUpdated();
+       // GridManager.Instance.OnGridUpdated();
     }
 }

@@ -56,6 +56,307 @@ MonoBehaviour:
     walkable: 0
   - row: 1
     column: 3
+    walkable: 1
+  - row: 1
+    column: 4
+    walkable: 1
+  - row: 1
+    column: 5
+    walkable: 1
+  - row: 1
+    column: 6
+    walkable: 1
+  - row: 1
+    column: 7
+    walkable: 0
+  - row: 1
+    column: 8
+    walkable: 0
+  - row: 1
+    column: 9
+    walkable: 0
+  - row: 2
+    column: 0
+    walkable: 0
+  - row: 2
+    column: 1
+    walkable: 0
+  - row: 2
+    column: 2
+    walkable: 1
+  - row: 2
+    column: 3
+    walkable: 1
+  - row: 2
+    column: 4
+    walkable: 0
+  - row: 2
+    column: 5
+    walkable: 0
+  - row: 2
+    column: 6
+    walkable: 1
+  - row: 2
+    column: 7
+    walkable: 1
+  - row: 2
+    column: 8
+    walkable: 0
+  - row: 2
+    column: 9
+    walkable: 0
+  - row: 3
+    column: 0
+    walkable: 0
+  - row: 3
+    column: 1
+    walkable: 0
+  - row: 3
+    column: 2
+    walkable: 1
+  - row: 3
+    column: 3
+    walkable: 0
+  - row: 3
+    column: 4
+    walkable: 0
+  - row: 3
+    column: 5
+    walkable: 0
+  - row: 3
+    column: 6
+    walkable: 0
+  - row: 3
+    column: 7
+    walkable: 1
+  - row: 3
+    column: 8
+    walkable: 1
+  - row: 3
+    column: 9
+    walkable: 0
+  - row: 4
+    column: 0
+    walkable: 0
+  - row: 4
+    column: 1
+    walkable: 0
+  - row: 4
+    column: 2
+    walkable: 1
+  - row: 4
+    column: 3
+    walkable: 0
+  - row: 4
+    column: 4
+    walkable: 0
+  - row: 4
+    column: 5
+    walkable: 0
+  - row: 4
+    column: 6
+    walkable: 0
+  - row: 4
+    column: 7
+    walkable: 0
+  - row: 4
+    column: 8
+    walkable: 1
+  - row: 4
+    column: 9
+    walkable: 0
+  - row: 5
+    column: 0
+    walkable: 0
+  - row: 5
+    column: 1
+    walkable: 0
+  - row: 5
+    column: 2
+    walkable: 1
+  - row: 5
+    column: 3
+    walkable: 0
+  - row: 5
+    column: 4
+    walkable: 0
+  - row: 5
+    column: 5
+    walkable: 0
+  - row: 5
+    column: 6
+    walkable: 0
+  - row: 5
+    column: 7
+    walkable: 1
+  - row: 5
+    column: 8
+    walkable: 1
+  - row: 5
+    column: 9
+    walkable: 0
+  - row: 6
+    column: 0
+    walkable: 0
+  - row: 6
+    column: 1
+    walkable: 0
+  - row: 6
+    column: 2
+    walkable: 1
+  - row: 6
+    column: 3
+    walkable: 0
+  - row: 6
+    column: 4
+    walkable: 0
+  - row: 6
+    column: 5
+    walkable: 0
+  - row: 6
+    column: 6
+    walkable: 0
+  - row: 6
+    column: 7
+    walkable: 1
+  - row: 6
+    column: 8
+    walkable: 0
+  - row: 6
+    column: 9
+    walkable: 0
+  - row: 7
+    column: 0
+    walkable: 0
+  - row: 7
+    column: 1
+    walkable: 0
+  - row: 7
+    column: 2
+    walkable: 1
+  - row: 7
+    column: 3
+    walkable: 1
+  - row: 7
+    column: 4
+    walkable: 1
+  - row: 7
+    column: 5
+    walkable: 0
+  - row: 7
+    column: 6
+    walkable: 1
+  - row: 7
+    column: 7
+    walkable: 1
+  - row: 7
+    column: 8
+    walkable: 0
+  - row: 7
+    column: 9
+    walkable: 0
+  - row: 8
+    column: 0
+    walkable: 0
+  - row: 8
+    column: 1
+    walkable: 0
+  - row: 8
+    column: 2
+    walkable: 0
+  - row: 8
+    column: 3
+    walkable: 0
+  - row: 8
+    column: 4
+    walkable: 1
+  - row: 8
+    column: 5
+    walkable: 1
+  - row: 8
+    column: 6
+    walkable: 1
+  - row: 8
+    column: 7
+    walkable: 0
+  - row: 8
+    column: 8
+    walkable: 0
+  - row: 8
+    column: 9
+    walkable: 0
+  - row: 9
+    column: 0
+    walkable: 0
+  - row: 9
+    column: 1
+    walkable: 0
+  - row: 9
+    column: 2
+    walkable: 0
+  - row: 9
+    column: 3
+    walkable: 0
+  - row: 9
+    column: 4
+    walkable: 0
+  - row: 9
+    column: 5
+    walkable: 0
+  - row: 9
+    column: 6
+    walkable: 0
+  - row: 9
+    column: 7
+    walkable: 0
+  - row: 9
+    column: 8
+    walkable: 0
+  - row: 9
+    column: 9
+    walkable: 0
+  DefauldGridCells:
+  - row: 0
+    column: 0
+    walkable: 0
+  - row: 0
+    column: 1
+    walkable: 0
+  - row: 0
+    column: 2
+    walkable: 0
+  - row: 0
+    column: 3
+    walkable: 0
+  - row: 0
+    column: 4
+    walkable: 0
+  - row: 0
+    column: 5
+    walkable: 0
+  - row: 0
+    column: 6
+    walkable: 0
+  - row: 0
+    column: 7
+    walkable: 0
+  - row: 0
+    column: 8
+    walkable: 0
+  - row: 0
+    column: 9
+    walkable: 0
+  - row: 1
+    column: 0
+    walkable: 0
+  - row: 1
+    column: 1
+    walkable: 0
+  - row: 1
+    column: 2
+    walkable: 0
+  - row: 1
+    column: 3
     walkable: 0
   - row: 1
     column: 4
@@ -101,7 +402,7 @@ MonoBehaviour:
     walkable: 1
   - row: 2
     column: 8
-    walkable: 1
+    walkable: 0
   - row: 2
     column: 9
     walkable: 0
@@ -128,11 +429,11 @@ MonoBehaviour:
     walkable: 0
   - row: 3
     column: 7
-    walkable: 0
-  - row: 3
-    column: 8
     walkable: 1
   - row: 3
+    column: 8
+    walkable: 0
+  - row: 3
     column: 9
     walkable: 0
   - row: 4
@@ -158,11 +459,11 @@ MonoBehaviour:
     walkable: 0
   - row: 4
     column: 7
-    walkable: 0
-  - row: 4
-    column: 8
     walkable: 1
   - row: 4
+    column: 8
+    walkable: 0
+  - row: 4
     column: 9
     walkable: 0
   - row: 5
@@ -188,10 +489,10 @@ MonoBehaviour:
     walkable: 0
   - row: 5
     column: 7
-    walkable: 0
+    walkable: 1
   - row: 5
     column: 8
-    walkable: 1
+    walkable: 0
   - row: 5
     column: 9
     walkable: 0
@@ -218,10 +519,10 @@ MonoBehaviour:
     walkable: 0
   - row: 6
     column: 7
-    walkable: 0
+    walkable: 1
   - row: 6
     column: 8
-    walkable: 1
+    walkable: 0
   - row: 6
     column: 9
     walkable: 0
@@ -251,7 +552,7 @@ MonoBehaviour:
     walkable: 1
   - row: 7
     column: 8
-    walkable: 1
+    walkable: 0
   - row: 7
     column: 9
     walkable: 0
