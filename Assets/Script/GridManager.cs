@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,6 +29,11 @@ public class GridManager : MonoBehaviour
         ClearGrid();
         BuildGrid();
         preComputedLoop.PrecomputeLoop();
+     Invoke(nameof(Rails),0.1f);
+    }
+
+    private void Rails()
+    {
         railsAligned.SpawnRails();
     }
 

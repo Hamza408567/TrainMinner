@@ -74,6 +74,9 @@ public class PreComputedLoop : MonoBehaviour
             return;
         }
 
+        // Step 4: Add corner cells to create orthogonal corners
+        tracedLoop = AddCornerCells(tracedLoop, Grid, width, height);
+
         PrecomputedLoop = tracedLoop;
         Debug.Log($"✅ Loop precomputed successfully! {PrecomputedLoop.Count} nodes.");
     }
@@ -190,6 +193,98 @@ public class PreComputedLoop : MonoBehaviour
         return loop;
     }
 
+    private List<GridNode> AddCornerCells(List<GridNode> loop, GridNode[,] Grid, int width, int height)
+    {
+        if (loop == null || loop.Count < 3) return loop;
+
+        List<GridNode> newLoop = new List<GridNode>();
+        
+        for (int i = 0; i < loop.Count - 1; i++)
+        {
+            GridNode current = loop[i];
+            GridNode next = loop[i + 1];
+            
+            // Add current node
+            newLoop.Add(current);
+            
+            // Check if this is a diagonal connection
+            int dx = next.gridPos.x - current.gridPos.x;
+            int dy = next.gridPos.y - current.gridPos.y;
+            
+            // If it's a diagonal move (both dx and dy are non-zero)
+            if (Mathf.Abs(dx) == 1 && Mathf.Abs(dy) == 1)
+            {
+                // We need to add a corner cell to make an orthogonal corner
+                // We have two options for the corner: (current.x, next.y) or (next.x, current.y)
+                // Choose the one that's walkable and connects properly
+                
+                Vector2Int cornerPos1 = new Vector2Int(current.gridPos.x, next.gridPos.y);
+                Vector2Int cornerPos2 = new Vector2Int(next.gridPos.x, current.gridPos.y);
+                
+                GridNode corner1 = IsValidPos(cornerPos1, width, height) ? Grid[cornerPos1.x, cornerPos1.y] : null;
+                GridNode corner2 = IsValidPos(cornerPos2, width, height) ? Grid[cornerPos2.x, cornerPos2.y] : null;
+                
+                // Check if the corner cell exists and is walkable
+                if (corner1 != null && corner1.walkable)
+                {
+                    // Also check if it would create a valid orthogonal path
+                    if (IsOrthogonalConnection(current.gridPos, cornerPos1) && 
+                        IsOrthogonalConnection(cornerPos1, next.gridPos))
+                    {
+                        newLoop.Add(corner1);
+                    }
+                }
+                else if (corner2 != null && corner2.walkable)
+                {
+                    // Also check if it would create a valid orthogonal path
+                    if (IsOrthogonalConnection(current.gridPos, cornerPos2) && 
+                        IsOrthogonalConnection(cornerPos2, next.gridPos))
+                    {
+                        newLoop.Add(corner2);
+                    }
+                }
+            }
+        }
+        
+        // Add the last node (which should be the same as first for closed loop)
+        if (loop.Count > 0)
+        {
+            newLoop.Add(loop[loop.Count - 1]);
+        }
+        
+        // Remove any consecutive duplicates
+        newLoop = RemoveConsecutiveDuplicates(newLoop);
+        
+        return newLoop;
+    }
+    
+    private bool IsOrthogonalConnection(Vector2Int pos1, Vector2Int pos2)
+    {
+        int dx = Mathf.Abs(pos1.x - pos2.x);
+        int dy = Mathf.Abs(pos1.y - pos2.y);
+        
+        // Orthogonal connection means moving in only one axis
+        return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
+    }
+    
+    private List<GridNode> RemoveConsecutiveDuplicates(List<GridNode> loop)
+    {
+        if (loop == null || loop.Count <= 1) return loop;
+        
+        List<GridNode> cleaned = new List<GridNode>();
+        cleaned.Add(loop[0]);
+        
+        for (int i = 1; i < loop.Count; i++)
+        {
+            if (loop[i] != loop[i - 1])
+            {
+                cleaned.Add(loop[i]);
+            }
+        }
+        
+        return cleaned;
+    }
+
     private bool IsValidPos(Vector2Int pos, int width, int height)
     {
         return pos.x >= 0 && pos.y >= 0 && pos.x < width && pos.y < height;
@@ -202,8 +297,24 @@ public class PreComputedLoop : MonoBehaviour
             Gizmos.color = Color.magenta;
             for (int i = 0; i < PrecomputedLoop.Count - 1; i++)
             {
-                Gizmos.DrawLine(PrecomputedLoop[i].worldPos + Vector3.up * 0.2f,
-                                PrecomputedLoop[i + 1].worldPos + Vector3.up * 0.2f);
+                if (PrecomputedLoop[i] != null && PrecomputedLoop[i + 1] != null)
+                {
+                    Vector3 start = PrecomputedLoop[i].worldPos + Vector3.up * 0.2f;
+                    Vector3 end = PrecomputedLoop[i + 1].worldPos + Vector3.up * 0.2f;
+                    Gizmos.DrawLine(start, end);
+                    
+                    // Draw corner nodes in yellow
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawSphere(start, 0.1f);
+                    Gizmos.color = Color.magenta;
+                }
+            }
+            
+            // Draw start node in green
+            if (PrecomputedLoop.Count > 0 && PrecomputedLoop[0] != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawSphere(PrecomputedLoop[0].worldPos + Vector3.up * 0.2f, 0.15f);
             }
         }
     }
