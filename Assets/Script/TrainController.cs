@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class TrainController : MonoBehaviour
 {
+    [SerializeField] private PreComputedLoop preComputedLoop;
     [Header("Engine Settings")]
     public float speed = 3f;
     public bool clockwise = true;
@@ -37,7 +38,7 @@ public class TrainController : MonoBehaviour
 
     void Start()
     {
-        loop = GridManager.Instance.PrecomputedLoop;
+        loop = preComputedLoop.PrecomputedLoop;
 
         if (loop == null || loop.Count < 2)
         {
@@ -57,7 +58,7 @@ public class TrainController : MonoBehaviour
 
 public void UpdateTrainPath()
 {
-    var newLoop = GridManager.Instance.PrecomputedLoop;
+    var newLoop =preComputedLoop.PrecomputedLoop;
     if (newLoop == null || newLoop.Count < 2)
     {
         Debug.LogWarning("⚠ No valid loop after update");

@@ -420,7 +420,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GridManager
   stonePrefab: {fileID: 7729937848475804429, guid: b20c0999b2307144b829ecff5116bf13, type: 3}
   straightRailPrefab: {fileID: 6217548099684322503, guid: 90db73004ab003040adc3e325cf5c222, type: 3}
-  cornerRailPrefab: {fileID: 8914451180631855731, guid: b5327b1f44f51ce4bbac2c145fddb9e8, type: 3}
+  cornerBL: {fileID: 8914451180631855731, guid: b5327b1f44f51ce4bbac2c145fddb9e8, type: 3}
+  cornerBR: {fileID: 8209999517666620811, guid: 8cf3ab1732c3e394496580e955449779, type: 3}
+  cornerTL: {fileID: 558076803118189208, guid: 5f117d8258725ab47bbaf6bb51acfee3, type: 3}
+  cornerTR: {fileID: 7510273215248381870, guid: 11e7754604b738e44adb835d7d809554, type: 3}
   railParent: {fileID: 1706137923}
   cellSize: 1.5
   levelData: {fileID: 11400000, guid: 5de6284af4306c94d8fe6cc22c9cfde8, type: 2}

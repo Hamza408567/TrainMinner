@@ -7,10 +7,8 @@ public class Stone : MonoBehaviour
     [Header("Health")]
     [SerializeField] private int maxHp = 6;
     private int currentHp;
-   // [SerializeField] private List<GameObject> damageVariants;
     public List<GameObject> damageVariant;
-
-    [HideInInspector] public GridNode node;
+    public GridNode node;
 
     // =============================
     void Awake()
@@ -18,24 +16,6 @@ public class Stone : MonoBehaviour
         currentHp = maxHp;
         UpdateVariant();
     }
-
-    void Start()
-    {
-        // Assign this stone to the grid node
-        Vector2Int gridPos = new Vector2Int(
-            Mathf.RoundToInt(transform.position.x),
-            Mathf.RoundToInt(transform.position.z)
-        );
-
-        node = GridManager.Instance.GetNode(gridPos);
-        if (node != null)
-        {
-            node.walkable = false;
-            node.stone = this;
-        }
-    }
-
-    // =============================
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("cutter"))
@@ -84,9 +64,7 @@ public class Stone : MonoBehaviour
             node.walkable = true;
             node.stone = null;
         }
-
         Destroy(gameObject);
-
-       // GridManager.Instance.OnGridUpdated();
+        //GridManager.Instance.OnGridUpdated();
     }
 }

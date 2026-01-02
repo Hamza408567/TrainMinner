@@ -14,47 +14,30 @@ public class GridCell
         this.column = column;
         this.walkable = walkable;
     }
-    public GridCell(GridCell other)
-    {
-        row = other.row;
-        column = other.column;
-        walkable = other.walkable;
-    }
 }
+
 [CreateAssetMenu(menuName = "TrainMiner/Level Data")]
 public class LevelData : ScriptableObject
 {
     public int width = 10;
     public int height = 10;
-    public List<GridCell> cells = new();
-    public List<GridCell> DefauldGridCells = new();
-    public bool isDefaults;
+
+    public List<GridCell> cells = new List<GridCell>();
+
+    // Initialize grid if empty
     public void InitializeGrid()
     {
-        DefauldGridCells.Clear();
-
+        cells.Clear();
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                DefauldGridCells.Add(new GridCell(x, y, false));
+                cells.Add(new GridCell(x, y, false));
             }
         }
     }
 
-    public void OnEnable()
-    {
-        if (isDefaults)
-        {
-            cells = new List<GridCell>();
-
-            foreach (var cell in DefauldGridCells)
-            {
-                cells.Add(new GridCell(cell)); // deep copy
-            }
-        }
-    }
-
+    // Get a cell by coordinates
     public GridCell GetCell(int x, int y)
     {
         return cells.Find(c => c.row == x && c.column == y);
