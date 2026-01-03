@@ -132,24 +132,26 @@ public class TrainController : MonoBehaviour
     // =============================
     void Update()
     {
-        // Check if left mouse button or primary touch is pressed
+        // Check input
         isMoving = Mouse.current.leftButton.isPressed ||
                    (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed);
 
-
         if (isMoving)
         {
-            enginSmoke.Play();
+            if (!enginSmoke.isPlaying)
+                enginSmoke.Play();
+
             MoveEngine();
             RecordHistory();
             MoveBuggies();
         }
         else
         {
-
-            enginSmoke.Stop();
+            if (enginSmoke.isPlaying)
+                enginSmoke.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
     }
+
 
     void MoveEngine()
     {
