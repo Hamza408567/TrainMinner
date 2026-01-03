@@ -39,20 +39,22 @@ public class SpawnRailsAligned : MonoBehaviour
             Vector3 dir1 = (current.worldPos - prev.worldPos).normalized; // incoming
             Vector3 dir2 = (next.worldPos - current.worldPos).normalized; // outgoing
 
-            GameObject railPrefabToUse = null;
+            GameObject railPrefabToUse;
             Quaternion rotation = Quaternion.identity;
 
-            // Straight rail
-            if (Vector3.Dot(dir1, dir2) > 0.99f)
+// ✅ FORCE FIRST RAIL TO BE BR
+            if (i == 0)
+            {
+                railPrefabToUse = cornerBR;
+            }
+            else if (Vector3.Dot(dir1, dir2) > 0.99f)
             {
                 railPrefabToUse = straightRailPrefab;
                 rotation = Quaternion.LookRotation(dir2, Vector3.up);
             }
             else
             {
-                // Determine corner prefab based on dir1 and dir2
                 railPrefabToUse = GetCornerPrefab(dir1, dir2);
-                rotation = Quaternion.identity; // already correctly oriented
             }
 
             // Instantiate rail

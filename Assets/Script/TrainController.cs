@@ -5,13 +5,12 @@ using UnityEngine.InputSystem;
 public class TrainController : MonoBehaviour
 {
     [SerializeField] private PreComputedLoop preComputedLoop;
-    [Header("Engine Settings")]
-    public float speed = 3f;
+    [SerializeField] private ParticleSystem enginSmoke;
+    [Header("Engine Settings")] public float speed = 3f;
     public bool clockwise = true;
     [SerializeField] private float engineRotationSpeed = 8f;
 
-    [Header("Buggy Settings")]
-    public GameObject buggyPrefab;
+    [Header("Buggy Settings")] public GameObject buggyPrefab;
     public int numberOfBuggies = 3;
 
     public float baseFollowDistance = 1.5f;
@@ -58,91 +57,97 @@ public class TrainController : MonoBehaviour
         SpawnBuggies();
     }
 
-public void UpdateTrainPath()
-{
-    var newLoop =preComputedLoop.PrecomputedLoop;
-    if (newLoop == null || newLoop.Count < 2)
+    public void UpdateTrainPath()
     {
-        Debug.LogWarning("⚠ No valid loop after update");
-        return;
-    }
-
-    loop = newLoop;
-
-    // Find closest node to engine
-    float minDist = float.MaxValue;
-    int closestIndex = 0;
-    for (int i = 0; i < loop.Count; i++)
-    {
-        float d = Vector3.Distance(transform.position, loop[i].worldPos);
-        if (d < minDist)
+        var newLoop = preComputedLoop.PrecomputedLoop;
+        if (newLoop == null || newLoop.Count < 2)
         {
-            minDist = d;
-            closestIndex = i;
+            Debug.LogWarning("⚠ No valid loop after update");
+            return;
         }
-    }
 
-    if (clockwise)
-        currentIndex = (closestIndex + 1) % loop.Count;
-    else
-        currentIndex = (closestIndex - 1 + loop.Count) % loop.Count;
+        loop = newLoop;
 
-    // ===============================
-    // Map buggies positions onto new loop
-    // ===============================
-    List<Vector3> newHistory = new List<Vector3>();
-    newHistory.Add(transform.position); // start with engine
-
-    foreach (var buggy in buggies)
-    {
-        // Find closest point on new loop for buggy
-        float minBuggyDist = float.MaxValue;
-        Vector3 closestPoint = transform.position;
-
-        for (int i = 0; i < loop.Count - 1; i++)
+        // Find closest node to engine
+        float minDist = float.MaxValue;
+        int closestIndex = 0;
+        for (int i = 0; i < loop.Count; i++)
         {
-            Vector3 start = loop[i].worldPos;
-            Vector3 end = loop[i + 1].worldPos;
-            Vector3 proj = ProjectPointOnLineSegment(start, end, buggy.position);
-            float dist = Vector3.Distance(buggy.position, proj);
-            if (dist < minBuggyDist)
+            float d = Vector3.Distance(transform.position, loop[i].worldPos);
+            if (d < minDist)
             {
-                minBuggyDist = dist;
-                closestPoint = proj;
+                minDist = d;
+                closestIndex = i;
             }
         }
 
-        newHistory.Add(closestPoint);
+        if (clockwise)
+            currentIndex = (closestIndex + 1) % loop.Count;
+        else
+            currentIndex = (closestIndex - 1 + loop.Count) % loop.Count;
+
+        // ===============================
+        // Map buggies positions onto new loop
+        // ===============================
+        List<Vector3> newHistory = new List<Vector3>();
+        newHistory.Add(transform.position); // start with engine
+
+        foreach (var buggy in buggies)
+        {
+            // Find closest point on new loop for buggy
+            float minBuggyDist = float.MaxValue;
+            Vector3 closestPoint = transform.position;
+
+            for (int i = 0; i < loop.Count - 1; i++)
+            {
+                Vector3 start = loop[i].worldPos;
+                Vector3 end = loop[i + 1].worldPos;
+                Vector3 proj = ProjectPointOnLineSegment(start, end, buggy.position);
+                float dist = Vector3.Distance(buggy.position, proj);
+                if (dist < minBuggyDist)
+                {
+                    minBuggyDist = dist;
+                    closestPoint = proj;
+                }
+            }
+
+            newHistory.Add(closestPoint);
+        }
+
+        // Replace history smoothly
+        positionHistory = newHistory;
+
+        Debug.Log("🚆 Train and buggies remapped to new path smoothly");
     }
 
-    // Replace history smoothly
-    positionHistory = newHistory;
-
-    Debug.Log("🚆 Train and buggies remapped to new path smoothly");
-}
-
 // Projects a point onto a line segment
-private Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
-{
-    Vector3 ab = b - a;
-    float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
-    t = Mathf.Clamp01(t);
-    return a + ab * t;
-}
+    private Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
+    {
+        Vector3 ab = b - a;
+        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
+        t = Mathf.Clamp01(t);
+        return a + ab * t;
+    }
 
     // =============================
     void Update()
     {
         // Check if left mouse button or primary touch is pressed
-        isMoving = Mouse.current.leftButton.isPressed || 
+        isMoving = Mouse.current.leftButton.isPressed ||
                    (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed);
 
 
         if (isMoving)
         {
+            enginSmoke.Play();
             MoveEngine();
             RecordHistory();
             MoveBuggies();
+        }
+        else
+        {
+
+            enginSmoke.Stop();
         }
     }
 
@@ -206,7 +211,23 @@ private Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
             }
         }
     }
+    void SpawnBuggies()
+    {
+        buggies.Clear();
 
+        for (int i = 0; i < numberOfBuggies; i++)
+        {
+            GameObject obj = Instantiate(
+                buggyPrefab,
+                transform.position,
+                transform.rotation,
+                transform.parent
+            );
+
+            obj.name = $"Buggy_{i + 1}";
+            buggies.Add(obj.transform);
+        }
+    }
     // =============================
     void MoveBuggies()
     {
@@ -269,21 +290,5 @@ private Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
     }
 
     // =============================
-    void SpawnBuggies()
-    {
-        buggies.Clear();
-
-        for (int i = 0; i < numberOfBuggies; i++)
-        {
-            GameObject obj = Instantiate(
-                buggyPrefab,
-                transform.position,
-                transform.rotation,
-                transform.parent
-            );
-
-            obj.name = $"Buggy_{i + 1}";
-            buggies.Add(obj.transform);
-        }
-    }
+   
 }

@@ -130,6 +130,34 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.46933883
+      objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.14155352
+      objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0000001618173
+      objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.59359676
+      objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.80476266
+      objectReference: {fileID: 0}
+    - target: {fileID: -7272059613845493823, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 827.175
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6556a1197a4de8c48828899239204b34, type: 3}
       propertyPath: m_Name
       value: Cutter_Red
@@ -137,10 +165,38 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -2008568778309543346, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2737507061597586382}
   m_SourcePrefab: {fileID: 100100000, guid: 6556a1197a4de8c48828899239204b34, type: 3}
 --- !u!4 &2481128525802110302 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6556a1197a4de8c48828899239204b34, type: 3}
   m_PrefabInstance: {fileID: 2730311959235304117}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4738953477304336635 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -2008568778309543346, guid: 6556a1197a4de8c48828899239204b34, type: 3}
+  m_PrefabInstance: {fileID: 2730311959235304117}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2737507061597586382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4738953477304336635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 839b412ba0d28ea42bcdd53e5c1a9ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AutoRotate
+  rotateX: 0
+  rotateY: 1
+  rotateZ: 0
+  unscaledTime: 0
+  rotationSpeed: 360
+  isWheel: 0
+  direction: 1
+  wheelRadius: 0.5

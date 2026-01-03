@@ -104,10 +104,31 @@ public class GridManager : MonoBehaviour
 
                 if (!node.walkable && stonePrefab != null)
                 {
-                    GameObject tempstone= Instantiate(stonePrefab, worldPos + Vector3.up * 0.5f, Quaternion.identity, transform);
-                    node.stone = tempstone.GetComponent<Stone>();
-                    tempstone.GetComponent<Stone>().node = node;
+                    // Instantiate stone
+                    GameObject tempStone = Instantiate(stonePrefab, worldPos + Vector3.up * 0.5f, Quaternion.identity, transform);
+
+                    // Assign node reference
+                    Stone stoneComp = tempStone.GetComponent<Stone>();
+                    stoneComp.node = node;
+                    node.stone = stoneComp;
+
+                    // Fix GPU instancing for all children
+                    MeshRenderer[] renderers = tempStone.GetComponentsInChildren<MeshRenderer>();
+                    MeshRenderer prefabRend = stonePrefab.GetComponentInChildren<MeshRenderer>();
+
+                    foreach (var rend in renderers)
+                    {
+                        // Use the shared material from prefab
+                        rend.sharedMaterial = prefabRend.sharedMaterial;
+
+                        // Optional: use property block if you want per-instance properties without breaking instancing
+                        MaterialPropertyBlock block = new MaterialPropertyBlock();
+                        block.SetColor("_BaseColor", Color.white); // Or any color
+                        rend.SetPropertyBlock(block);
+                    }
                 }
+
+
 
                 Grid[x, y] = node;
             }
