@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    [Range(2,10)]
-    public int updateAfterStone=4;
+   // [Range(2,10)]
+    private int updateAfterStone=2;
     public static GridManager Instance;
     [SerializeField] private PreComputedLoop preComputedLoop;
     [SerializeField] private SpawnRailsAligned railsAligned;

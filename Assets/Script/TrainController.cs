@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
 public class TrainController : MonoBehaviour
 {
@@ -10,27 +11,29 @@ public class TrainController : MonoBehaviour
     [Header("Engine Settings")]
     public float speed = 3f;
     public bool clockwise = true;
-    [SerializeField] private float engineRotationSpeed = 8f;
+    [SerializeField] private float baseEngineRotationSpeed = 8f; // Added: Base rotation speed
+    [SerializeField] private float engineRotationSpeedMultiplier = 0.5f; // Added: How much speed affects rotation
 
     [Header("Buggy Settings")]
     public GameObject buggyPrefab;
     public int numberOfBuggies = 3;
-
     public float baseFollowDistance = 1.5f;
-    public float distanceMultiplier = 1f;
-
+    public float distanceMultiplier = 1.0f;
+    [SerializeField] private float baseBuggyRotationSmoothness = 10f; // Added: Base rotation speed
+    [SerializeField] private float buggyRotationSpeedMultiplier = 0.3f; // Added: How much speed affects rotation
     [SerializeField] private float buggyMoveSmoothness = 12f;
-    [SerializeField] private float buggyRotationSmoothness = 10f;
 
-    // =============================
     private List<GridNode> loop;
-    private List<float> segmentLengths = new();
-
-    private float loopLength;
-    private float engineDistance;
-
-    private readonly List<Transform> buggies = new();
-    private bool isMoving;
+    private float enginePathDistance = 0f;
+    private List<Transform> buggies = new List<Transform>();
+    private float totalLoopLength = 0f;
+    private List<float> segmentLengths = new List<float>();
+    private List<float> cumulativeLengths = new List<float>();
+    private bool isMoving = false;
+    
+    // Calculated properties
+    private float CurrentEngineRotationSpeed => baseEngineRotationSpeed + (speed * engineRotationSpeedMultiplier);
+    private float CurrentBuggyRotationSpeed => baseBuggyRotationSmoothness + (speed * buggyRotationSpeedMultiplier);
 
     // =============================
     void OnEnable()
@@ -42,223 +45,401 @@ public class TrainController : MonoBehaviour
     {
         GridManager.OnLoopUpdated -= UpdateTrainPath;
     }
-
+    public void SetSpeedFromSlider(float value)
+    {
+        speed = value;
+    }
     void Start()
     {
+        
         loop = preComputedLoop.PrecomputedLoop;
-
         if (loop == null || loop.Count < 2)
         {
-            Debug.LogError("❌ No valid loop found");
+            Debug.LogError("No precomputed loop found!");
             enabled = false;
             return;
         }
 
-        BuildLoopData();
-
-        engineDistance = 0f;
+        CalculateLoopLengths();
+        
+        // Start engine at first node
         transform.position = loop[0].worldPos;
-
+        enginePathDistance = 0f;
+        
         SpawnBuggies();
+        
+        Debug.Log($"Train initialized. Loop length: {totalLoopLength}, Clockwise: {clockwise}");
+        Debug.Log($"Current rotation speeds - Engine: {CurrentEngineRotationSpeed:F1}, Buggy: {CurrentBuggyRotationSpeed:F1}");
+    }
+
+    void CalculateLoopLengths()
+    {
+        segmentLengths.Clear();
+        cumulativeLengths.Clear();
+        totalLoopLength = 0f;
+        
+        for (int i = 0; i < loop.Count; i++)
+        {
+            int nextIndex = (i + 1) % loop.Count;
+            float segmentLength = Vector3.Distance(loop[i].worldPos, loop[nextIndex].worldPos);
+            segmentLengths.Add(segmentLength);
+            totalLoopLength += segmentLength;
+            cumulativeLengths.Add(totalLoopLength);
+        }
+    }
+
+    // Get position at a specific distance along the loop
+    Vector3 GetPositionAtDistance(float distance)
+    {
+        // Normalize distance to loop length
+        distance = Mathf.Repeat(distance, totalLoopLength);
+        
+        // Find which segment the distance falls into
+        for (int i = 0; i < cumulativeLengths.Count; i++)
+        {
+            if (distance <= cumulativeLengths[i])
+            {
+                float segmentStartDistance = (i == 0) ? 0 : cumulativeLengths[i - 1];
+                float distanceInSegment = distance - segmentStartDistance;
+                
+                int startNodeIndex = i;
+                int endNodeIndex = (i + 1) % loop.Count;
+                
+                Vector3 startPos = loop[startNodeIndex].worldPos;
+                Vector3 endPos = loop[endNodeIndex].worldPos;
+                
+                float t = distanceInSegment / segmentLengths[i];
+                return Vector3.Lerp(startPos, endPos, t);
+            }
+        }
+        
+        return loop[0].worldPos; // Fallback
+    }
+
+    // Get the direction vector at a specific distance
+    Vector3 GetDirectionAtDistance(float distance)
+    {
+        distance = Mathf.Repeat(distance, totalLoopLength);
+        
+        // Find which segment we're on
+        for (int i = 0; i < cumulativeLengths.Count; i++)
+        {
+            if (distance <= cumulativeLengths[i])
+            {
+                int startNodeIndex = i;
+                int endNodeIndex = (i + 1) % loop.Count;
+                
+                Vector3 startPos = loop[startNodeIndex].worldPos;
+                Vector3 endPos = loop[endNodeIndex].worldPos;
+                
+                return (endPos - startPos).normalized;
+            }
+        }
+        
+        return (loop[1].worldPos - loop[0].worldPos).normalized;
     }
 
     // =============================
     void Update()
     {
-        isMoving =
-            Mouse.current?.leftButton.isPressed == true ||
-            Touchscreen.current?.primaryTouch.press.isPressed == true;
-
+        // Check input
+        isMoving = Mouse.current.leftButton.isPressed || 
+                   (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed);
+        
         if (isMoving)
         {
-            if (!enginSmoke.isPlaying)
+            if (!enginSmoke.isPlaying) 
                 enginSmoke.Play();
-
+            
             MoveEngine();
             MoveBuggies();
         }
         else
         {
-            if (enginSmoke.isPlaying)
+            if (enginSmoke.isPlaying) 
                 enginSmoke.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
     }
 
-    // =============================
     void MoveEngine()
     {
-        float move = speed * Time.deltaTime;
-        engineDistance += clockwise ? move : -move;
-        engineDistance = Mathf.Repeat(engineDistance, loopLength);
-
-        Vector3 pos = GetPositionAtDistance(engineDistance);
-        Vector3 dir = GetDirectionAtDistance(engineDistance);
-
-        transform.position = pos;
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            Quaternion.LookRotation(dir, Vector3.up),
-            engineRotationSpeed * Time.deltaTime
-        );
+        // Calculate movement based on direction
+        float directionFactor = clockwise ? 1f : -1f;
+        float deltaDistance = speed * Time.deltaTime * directionFactor;
+        
+        // Update engine distance
+        enginePathDistance += deltaDistance;
+        
+        // Ensure distance stays within loop bounds
+        while (enginePathDistance < 0) enginePathDistance += totalLoopLength;
+        while (enginePathDistance >= totalLoopLength) enginePathDistance -= totalLoopLength;
+        
+        // Get new position
+        Vector3 targetPosition = GetPositionAtDistance(enginePathDistance);
+        transform.position = targetPosition;
+        
+        // Get direction at this point
+        Vector3 loopDirection = GetDirectionAtDistance(enginePathDistance);
+        
+        // Determine actual facing direction based on movement direction
+        Vector3 facingDirection = clockwise ? loopDirection : -loopDirection;
+        
+        // Rotate engine with speed-dependent rotation speed
+        if (facingDirection.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(facingDirection, Vector3.up);
+            float rotationSpeed = CurrentEngineRotationSpeed;
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
+        }
     }
 
-    // =============================
     void MoveBuggies()
     {
         for (int i = 0; i < buggies.Count; i++)
         {
-            float offset =
-                baseFollowDistance * distanceMultiplier * (i + 1);
-
-            float buggyDistance = engineDistance - offset;
-            buggyDistance = Mathf.Repeat(buggyDistance, loopLength);
-
-            Vector3 targetPos = GetPositionAtDistance(buggyDistance);
-            Vector3 forward = GetDirectionAtDistance(buggyDistance);
-
+            // Calculate buggy distance - always BEHIND the engine
+            float followDistance = baseFollowDistance * distanceMultiplier * (i + 1);
+            
+            // Buggy distance depends on movement direction
+            float buggyDistance;
+            if (clockwise)
+            {
+                // Moving clockwise: buggies are behind (earlier in loop)
+                buggyDistance = enginePathDistance - followDistance;
+            }
+            else
+            {
+                // Moving counter-clockwise: buggies are behind (later in loop)
+                buggyDistance = enginePathDistance + followDistance;
+            }
+            
+            // Wrap distance
+            while (buggyDistance < 0) buggyDistance += totalLoopLength;
+            while (buggyDistance >= totalLoopLength) buggyDistance -= totalLoopLength;
+            
+            // Get buggy target position
+            Vector3 targetPosition = GetPositionAtDistance(buggyDistance);
+            
+            // Get direction at buggy position
+            Vector3 loopDirection = GetDirectionAtDistance(buggyDistance);
+            
+            // Buggy faces same direction as engine
+            Vector3 buggyFacingDirection = clockwise ? loopDirection : -loopDirection;
+            
+            // Smooth movement
             Transform buggy = buggies[i];
-
             buggy.position = Vector3.Lerp(
                 buggy.position,
-                targetPos,
+                targetPosition,
                 buggyMoveSmoothness * Time.deltaTime
             );
-
-            buggy.rotation = Quaternion.Slerp(
-                buggy.rotation,
-                Quaternion.LookRotation(forward, Vector3.up),
-                buggyRotationSmoothness * Time.deltaTime
-            );
+            
+            // Rotate buggy with speed-dependent rotation speed
+            if (buggyFacingDirection.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(buggyFacingDirection, Vector3.up);
+                float rotationSpeed = CurrentBuggyRotationSpeed;
+                buggy.rotation = Quaternion.Slerp(
+                    buggy.rotation,
+                    targetRotation,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
         }
     }
 
-    // =============================
     void SpawnBuggies()
     {
         buggies.Clear();
-
+        
         for (int i = 0; i < numberOfBuggies; i++)
         {
-            GameObject obj = Instantiate(
+            // Calculate initial position for each buggy (behind engine)
+            float followDistance = baseFollowDistance * distanceMultiplier * (i + 1);
+            float buggyDistance;
+            
+            if (clockwise)
+            {
+                buggyDistance = enginePathDistance - followDistance;
+            }
+            else
+            {
+                buggyDistance = enginePathDistance + followDistance;
+            }
+            
+            // Wrap distance
+            while (buggyDistance < 0) buggyDistance += totalLoopLength;
+            while (buggyDistance >= totalLoopLength) buggyDistance -= totalLoopLength;
+            
+            Vector3 spawnPosition = GetPositionAtDistance(buggyDistance);
+            
+            // Get direction for buggy
+            Vector3 loopDirection = GetDirectionAtDistance(buggyDistance);
+            Vector3 spawnDirection = clockwise ? loopDirection : -loopDirection;
+            
+            Quaternion spawnRotation = Quaternion.LookRotation(spawnDirection, Vector3.up);
+            
+            GameObject buggy = Instantiate(
                 buggyPrefab,
-                transform.position,
-                transform.rotation,
+                spawnPosition,
+                spawnRotation,
                 transform.parent
             );
-
-            obj.name = $"Buggy_{i + 1}";
-            buggies.Add(obj.transform);
+            buggy.name = $"Buggy_{i + 1}";
+            buggies.Add(buggy.transform);
         }
     }
 
-    // =============================
-    void UpdateTrainPath()
+    public void UpdateTrainPath()
     {
         var newLoop = preComputedLoop.PrecomputedLoop;
-
         if (newLoop == null || newLoop.Count < 2)
         {
-            Debug.LogWarning("⚠ Loop update ignored (invalid)");
+            Debug.LogWarning("⚠ No valid loop after update");
             return;
         }
-
+        
+        // Store old positions for buggies
+        List<Vector3> oldBuggyPositions = new List<Vector3>();
+        foreach (var buggy in buggies)
+        {
+            oldBuggyPositions.Add(buggy.position);
+        }
+        
+        // Update loop and recalculate
         loop = newLoop;
-        BuildLoopData();
-
-        engineDistance = FindClosestDistanceOnLoop(transform.position);
-
-        Debug.Log("🚆 Train + buggies remapped to updated loop");
+        CalculateLoopLengths();
+        
+        // Find closest point on new loop for engine
+        float closestEngineDistance = FindClosestDistanceOnLoop(transform.position);
+        enginePathDistance = closestEngineDistance;
+        
+        // Update buggies - find closest points on new loop
+        for (int i = 0; i < buggies.Count; i++)
+        {
+            if (i < oldBuggyPositions.Count)
+            {
+                float buggyDistance = FindClosestDistanceOnLoop(oldBuggyPositions[i]);
+                
+                // Adjust to maintain proper following distance
+                float followDistance = baseFollowDistance * distanceMultiplier * (i + 1);
+                if (clockwise)
+                {
+                    buggyDistance = enginePathDistance - followDistance;
+                }
+                else
+                {
+                    buggyDistance = enginePathDistance + followDistance;
+                }
+                
+                // Wrap distance
+                while (buggyDistance < 0) buggyDistance += totalLoopLength;
+                while (buggyDistance >= totalLoopLength) buggyDistance -= totalLoopLength;
+                
+                // Update position and rotation
+                Vector3 newPosition = GetPositionAtDistance(buggyDistance);
+                buggies[i].position = newPosition;
+                
+                Vector3 loopDirection = GetDirectionAtDistance(buggyDistance);
+                Vector3 buggyDirection = clockwise ? loopDirection : -loopDirection;
+                buggies[i].rotation = Quaternion.LookRotation(buggyDirection, Vector3.up);
+            }
+        }
+        
+        Debug.Log($"🚆 Train remapped to new path. Engine distance: {enginePathDistance:F2}");
     }
 
-    // =============================
-    void BuildLoopData()
+    float FindClosestDistanceOnLoop(Vector3 position)
     {
-        segmentLengths.Clear();
-        loopLength = 0f;
-
+        float minDistance = float.MaxValue;
+        float closestDistance = 0f;
+        
         for (int i = 0; i < loop.Count; i++)
         {
-            Vector3 a = loop[i].worldPos;
-            Vector3 b = loop[(i + 1) % loop.Count].worldPos;
-
-            float len = Vector3.Distance(a, b);
-            segmentLengths.Add(len);
-            loopLength += len;
-        }
-    }
-
-    // =============================
-    Vector3 GetPositionAtDistance(float distance)
-    {
-        float remaining = distance;
-
-        for (int i = 0; i < segmentLengths.Count; i++)
-        {
-            if (segmentLengths[i] >= remaining)
+            int nextIndex = (i + 1) % loop.Count;
+            Vector3 start = loop[i].worldPos;
+            Vector3 end = loop[nextIndex].worldPos;
+            
+            // Project point onto line segment
+            Vector3 line = end - start;
+            float lineLength = line.magnitude;
+            Vector3 lineDir = line.normalized;
+            Vector3 pointToStart = position - start;
+            
+            float t = Vector3.Dot(pointToStart, lineDir);
+            t = Mathf.Clamp(t, 0, lineLength);
+            
+            Vector3 closestPoint = start + lineDir * t;
+            float distanceToSegment = Vector3.Distance(position, closestPoint);
+            
+            if (distanceToSegment < minDistance)
             {
-                Vector3 a = loop[i].worldPos;
-                Vector3 b = loop[(i + 1) % loop.Count].worldPos;
-                float t = remaining / segmentLengths[i];
-                return Vector3.Lerp(a, b, t);
+                minDistance = distanceToSegment;
+                
+                // Calculate distance along loop to this point
+                float segmentStartDistance = (i == 0) ? 0 : cumulativeLengths[i - 1];
+                closestDistance = segmentStartDistance + t;
             }
-
-            remaining -= segmentLengths[i];
         }
-
-        return loop[^1].worldPos;
+        
+        return closestDistance;
     }
 
-    Vector3 GetDirectionAtDistance(float distance)
+    // Display current rotation speeds in the inspector
+    void OnGUI()
     {
-        float remaining = distance;
-
-        for (int i = 0; i < segmentLengths.Count; i++)
+        if (Application.isPlaying)
         {
-            if (segmentLengths[i] >= remaining)
-            {
-                Vector3 a = loop[i].worldPos;
-                Vector3 b = loop[(i + 1) % loop.Count].worldPos;
-                return (b - a).normalized;
-            }
-
-            remaining -= segmentLengths[i];
+            GUI.Label(new Rect(10, 10, 300, 20), $"Engine Rotation Speed: {CurrentEngineRotationSpeed:F1}");
+            GUI.Label(new Rect(10, 30, 300, 20), $"Buggy Rotation Speed: {CurrentBuggyRotationSpeed:F1}");
+            GUI.Label(new Rect(10, 50, 300, 20), $"Train Speed: {speed:F1}");
         }
-
-        return (loop[1].worldPos - loop[0].worldPos).normalized;
     }
 
-    // =============================
-    float FindClosestDistanceOnLoop(Vector3 pos)
+    // Debug visualization
+    void OnDrawGizmosSelected()
     {
-        float bestDist = float.MaxValue;
-        float bestDistance = 0f;
-        float accumulated = 0f;
-
+        if (loop == null || loop.Count < 2) return;
+        
+        // Draw loop
+        Gizmos.color = Color.green;
         for (int i = 0; i < loop.Count; i++)
         {
-            Vector3 a = loop[i].worldPos;
-            Vector3 b = loop[(i + 1) % loop.Count].worldPos;
-
-            Vector3 proj = ProjectPointOnLineSegment(a, b, pos);
-            float d = Vector3.Distance(pos, proj);
-
-            if (d < bestDist)
-            {
-                bestDist = d;
-                bestDistance = accumulated + Vector3.Distance(a, proj);
-            }
-
-            accumulated += segmentLengths[i];
+            int nextIndex = (i + 1) % loop.Count;
+            Gizmos.DrawLine(loop[i].worldPos, loop[nextIndex].worldPos);
         }
-
-        return bestDistance;
-    }
-
-    Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
-    {
-        Vector3 ab = b - a;
-        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
-        t = Mathf.Clamp01(t);
-        return a + ab * t;
+        
+        // Draw engine position and direction
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere(transform.position, 0.3f);
+        
+        Vector3 engineDirection = GetDirectionAtDistance(enginePathDistance);
+        if (!clockwise) engineDirection = -engineDirection;
+        Gizmos.DrawRay(transform.position, engineDirection * 2f);
+        
+        // Draw buggy target positions
+        Gizmos.color = Color.blue;
+        for (int i = 0; i < buggies.Count; i++)
+        {
+            float followDistance = baseFollowDistance * distanceMultiplier * (i + 1);
+            float buggyDistance;
+            
+            if (clockwise)
+                buggyDistance = enginePathDistance - followDistance;
+            else
+                buggyDistance = enginePathDistance + followDistance;
+            
+            // Wrap distance
+            while (buggyDistance < 0) buggyDistance += totalLoopLength;
+            while (buggyDistance >= totalLoopLength) buggyDistance -= totalLoopLength;
+            
+            Vector3 buggyPos = GetPositionAtDistance(buggyDistance);
+            Gizmos.DrawSphere(buggyPos, 0.2f);
+            Gizmos.DrawLine(transform.position, buggyPos);
+        }
     }
 }
