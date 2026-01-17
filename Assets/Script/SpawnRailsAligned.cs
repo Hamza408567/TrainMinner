@@ -11,7 +11,7 @@ public class SpawnRailsAligned : MonoBehaviour
     [SerializeField] private GameObject cornerBR; // Bottom-Right
     [SerializeField] private GameObject cornerTL; // Top-Left
     [SerializeField] private GameObject cornerTR; // Top-Right
-    [SerializeField] private Transform railParent; // optional, organize rails under a parent
+    [SerializeField] private Transform railParent;// optional, organize rails under a parent
     private void Awake()
     {
         preComputedLoop = GetComponent<PreComputedLoop>();
@@ -41,7 +41,6 @@ public class SpawnRailsAligned : MonoBehaviour
 
             GameObject railPrefabToUse;
             Quaternion rotation = Quaternion.identity;
-
 // ✅ FORCE FIRST RAIL TO BE BR
             if (i == 0)
             {
@@ -60,6 +59,7 @@ public class SpawnRailsAligned : MonoBehaviour
             // Instantiate rail
             Vector3 position = current.worldPos;
             GameObject rail = Instantiate(railPrefabToUse, position, rotation, railParent);
+            current.NewUnlock=false;
             rail.name = $"Rail_{i}_{railPrefabToUse.name}";
         }
 

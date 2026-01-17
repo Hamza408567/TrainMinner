@@ -10,7 +10,6 @@ public class GridManagerEditor : Editor
         DrawDefaultInspector();
 
         GridManager gm = (GridManager)target;
-
         if (gm.Grid == null || gm.Grid.Length == 0)
         {
             EditorGUILayout.HelpBox("Grid is empty. Run the scene or call BuildGrid first.", MessageType.Info);
@@ -35,8 +34,19 @@ public class GridManagerEditor : Editor
                 if (node != null)
                 {
                     // Color based on walkable
-                    GUI.backgroundColor = node.walkable ? Color.green : Color.red;
-
+                    // Color priority: NewUnlock > Walkable
+                    if (node.NewUnlock)
+                    {
+                        GUI.backgroundColor = gm.newUnlock; // newly unlocked node
+                    }
+                    else if (node.walkable)
+                    {
+                        GUI.backgroundColor = gm.previewWalkable; // normal walkable
+                    }
+                    else
+                    {
+                        GUI.backgroundColor = gm.previewBlocked; // blocked
+                    }
                     // Draw a button for each cell (optional: toggle walkable)
                     if (GUILayout.Button("", GUILayout.Width(30), GUILayout.Height(30)))
                     {

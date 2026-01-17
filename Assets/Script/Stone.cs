@@ -120,6 +120,7 @@ public class Stone : MonoBehaviour
         if (node != null)
         {
             node.walkable = true;
+            node.NewUnlock = true;
             node.stone = null;
         }
         GridManager.Instance.GridUpdateAfter4Stonedistroy();

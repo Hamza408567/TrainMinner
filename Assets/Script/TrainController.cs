@@ -6,25 +6,31 @@ public class TrainController : MonoBehaviour
 {
     [SerializeField] private PreComputedLoop preComputedLoop;
     [SerializeField] private ParticleSystem enginSmoke;
-    [Header("Engine Settings")] public float speed = 3f;
+
+    [Header("Engine Settings")]
+    public float speed = 3f;
     public bool clockwise = true;
     [SerializeField] private float engineRotationSpeed = 8f;
 
-    [Header("Buggy Settings")] public GameObject buggyPrefab;
+    [Header("Buggy Settings")]
+    public GameObject buggyPrefab;
     public int numberOfBuggies = 3;
 
     public float baseFollowDistance = 1.5f;
-    public float distanceMultiplier = 1.0f;
+    public float distanceMultiplier = 1f;
 
     [SerializeField] private float buggyMoveSmoothness = 12f;
     [SerializeField] private float buggyRotationSmoothness = 10f;
 
+    // =============================
     private List<GridNode> loop;
-    private int currentIndex;
+    private List<float> segmentLengths = new();
 
-    private List<Transform> buggies = new List<Transform>();
-    private List<Vector3> positionHistory = new List<Vector3>();
-    private bool isMoving = false;
+    private float loopLength;
+    private float engineDistance;
+
+    private readonly List<Transform> buggies = new();
+    private bool isMoving;
 
     // =============================
     void OnEnable()
@@ -43,98 +49,25 @@ public class TrainController : MonoBehaviour
 
         if (loop == null || loop.Count < 2)
         {
-            Debug.LogError("No precomputed loop found!");
+            Debug.LogError("❌ No valid loop found");
             enabled = false;
             return;
         }
 
-        transform.position = loop[0].worldPos;
-        currentIndex = clockwise ? 1 : loop.Count - 1;
+        BuildLoopData();
 
-        positionHistory.Clear();
-        positionHistory.Add(transform.position);
+        engineDistance = 0f;
+        transform.position = loop[0].worldPos;
 
         SpawnBuggies();
-    }
-
-    public void UpdateTrainPath()
-    {
-        var newLoop = preComputedLoop.PrecomputedLoop;
-        if (newLoop == null || newLoop.Count < 2)
-        {
-            Debug.LogWarning("⚠ No valid loop after update");
-            return;
-        }
-
-        loop = newLoop;
-
-        // Find closest node to engine
-        float minDist = float.MaxValue;
-        int closestIndex = 0;
-        for (int i = 0; i < loop.Count; i++)
-        {
-            float d = Vector3.Distance(transform.position, loop[i].worldPos);
-            if (d < minDist)
-            {
-                minDist = d;
-                closestIndex = i;
-            }
-        }
-
-        if (clockwise)
-            currentIndex = (closestIndex + 1) % loop.Count;
-        else
-            currentIndex = (closestIndex - 1 + loop.Count) % loop.Count;
-
-        // ===============================
-        // Map buggies positions onto new loop
-        // ===============================
-        List<Vector3> newHistory = new List<Vector3>();
-        newHistory.Add(transform.position); // start with engine
-
-        foreach (var buggy in buggies)
-        {
-            // Find closest point on new loop for buggy
-            float minBuggyDist = float.MaxValue;
-            Vector3 closestPoint = transform.position;
-
-            for (int i = 0; i < loop.Count - 1; i++)
-            {
-                Vector3 start = loop[i].worldPos;
-                Vector3 end = loop[i + 1].worldPos;
-                Vector3 proj = ProjectPointOnLineSegment(start, end, buggy.position);
-                float dist = Vector3.Distance(buggy.position, proj);
-                if (dist < minBuggyDist)
-                {
-                    minBuggyDist = dist;
-                    closestPoint = proj;
-                }
-            }
-
-            newHistory.Add(closestPoint);
-        }
-
-        // Replace history smoothly
-        positionHistory = newHistory;
-
-        Debug.Log("🚆 Train and buggies remapped to new path smoothly");
-    }
-
-// Projects a point onto a line segment
-    private Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
-    {
-        Vector3 ab = b - a;
-        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
-        t = Mathf.Clamp01(t);
-        return a + ab * t;
     }
 
     // =============================
     void Update()
     {
-        // Check input
-        isMoving = Mouse.current.leftButton.isPressed ||
-                   (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed);
+        isMoving =
+            Mouse.current?.leftButton.isPressed == true ||
+            Touchscreen.current?.primaryTouch.press.isPressed == true;
 
         if (isMoving)
         {
@@ -142,7 +75,6 @@ public class TrainController : MonoBehaviour
                 enginSmoke.Play();
 
             MoveEngine();
-            RecordHistory();
             MoveBuggies();
         }
         else
@@ -152,67 +84,55 @@ public class TrainController : MonoBehaviour
         }
     }
 
-
+    // =============================
     void MoveEngine()
     {
-        Vector3 target = loop[currentIndex].worldPos;
+        float move = speed * Time.deltaTime;
+        engineDistance += clockwise ? move : -move;
+        engineDistance = Mathf.Repeat(engineDistance, loopLength);
 
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            target,
-            speed * Time.deltaTime
+        Vector3 pos = GetPositionAtDistance(engineDistance);
+        Vector3 dir = GetDirectionAtDistance(engineDistance);
+
+        transform.position = pos;
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            Quaternion.LookRotation(dir, Vector3.up),
+            engineRotationSpeed * Time.deltaTime
         );
-
-        Vector3 moveDir = target - transform.position;
-        if (moveDir.sqrMagnitude > 0.0001f)
-        {
-            Quaternion rot = Quaternion.LookRotation(moveDir.normalized, Vector3.up);
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                rot,
-                engineRotationSpeed * Time.deltaTime
-            );
-        }
-
-        // Reached node
-        if (Vector3.Distance(transform.position, target) < 0.05f)
-        {
-            if (clockwise)
-            {
-                currentIndex = (currentIndex + 1) % loop.Count;
-            }
-            else
-            {
-                currentIndex = (currentIndex - 1 + loop.Count) % loop.Count;
-            }
-        }
     }
-
 
     // =============================
-    void RecordHistory()
+    void MoveBuggies()
     {
-        if (positionHistory.Count == 0 ||
-            Vector3.Distance(positionHistory[^1], transform.position) > 0.02f)
+        for (int i = 0; i < buggies.Count; i++)
         {
-            positionHistory.Add(transform.position);
-        }
+            float offset =
+                baseFollowDistance * distanceMultiplier * (i + 1);
 
-        // Distance-based history trimming (NO jitter)
-        float maxDistance =
-            baseFollowDistance * distanceMultiplier * (numberOfBuggies + 2);
+            float buggyDistance = engineDistance - offset;
+            buggyDistance = Mathf.Repeat(buggyDistance, loopLength);
 
-        float dist = 0f;
-        for (int i = positionHistory.Count - 1; i > 0; i--)
-        {
-            dist += Vector3.Distance(positionHistory[i], positionHistory[i - 1]);
-            if (dist > maxDistance)
-            {
-                positionHistory.RemoveRange(0, i);
-                break;
-            }
+            Vector3 targetPos = GetPositionAtDistance(buggyDistance);
+            Vector3 forward = GetDirectionAtDistance(buggyDistance);
+
+            Transform buggy = buggies[i];
+
+            buggy.position = Vector3.Lerp(
+                buggy.position,
+                targetPos,
+                buggyMoveSmoothness * Time.deltaTime
+            );
+
+            buggy.rotation = Quaternion.Slerp(
+                buggy.rotation,
+                Quaternion.LookRotation(forward, Vector3.up),
+                buggyRotationSmoothness * Time.deltaTime
+            );
         }
     }
+
+    // =============================
     void SpawnBuggies()
     {
         buggies.Clear();
@@ -230,67 +150,115 @@ public class TrainController : MonoBehaviour
             buggies.Add(obj.transform);
         }
     }
+
     // =============================
-    void MoveBuggies()
+    void UpdateTrainPath()
     {
-        for (int i = 0; i < buggies.Count; i++)
+        var newLoop = preComputedLoop.PrecomputedLoop;
+
+        if (newLoop == null || newLoop.Count < 2)
         {
-            float distance =
-                baseFollowDistance * distanceMultiplier * (i + 1);
+            Debug.LogWarning("⚠ Loop update ignored (invalid)");
+            return;
+        }
 
-            Vector3 targetPos = GetPositionAlongHistory(distance);
+        loop = newLoop;
+        BuildLoopData();
 
-            Transform buggy = buggies[i];
+        engineDistance = FindClosestDistanceOnLoop(transform.position);
 
-            // Smooth & stable movement
-            buggy.position = Vector3.Lerp(
-                buggy.position,
-                targetPos,
-                buggyMoveSmoothness * Time.deltaTime
-            );
+        Debug.Log("🚆 Train + buggies remapped to updated loop");
+    }
 
-            // Face movement direction
-            Vector3 moveDir = targetPos - buggy.position;
-            if (moveDir.sqrMagnitude > 0.0001f)
-            {
-                Quaternion rot = Quaternion.LookRotation(moveDir.normalized, Vector3.up);
-                buggy.rotation = Quaternion.Slerp(
-                    buggy.rotation,
-                    rot,
-                    buggyRotationSmoothness * Time.deltaTime
-                );
-            }
+    // =============================
+    void BuildLoopData()
+    {
+        segmentLengths.Clear();
+        loopLength = 0f;
+
+        for (int i = 0; i < loop.Count; i++)
+        {
+            Vector3 a = loop[i].worldPos;
+            Vector3 b = loop[(i + 1) % loop.Count].worldPos;
+
+            float len = Vector3.Distance(a, b);
+            segmentLengths.Add(len);
+            loopLength += len;
         }
     }
 
     // =============================
-    Vector3 GetPositionAlongHistory(float distance)
+    Vector3 GetPositionAtDistance(float distance)
     {
         float remaining = distance;
 
-        for (int i = positionHistory.Count - 1; i > 0; i--)
+        for (int i = 0; i < segmentLengths.Count; i++)
         {
-            float seg = Vector3.Distance(
-                positionHistory[i],
-                positionHistory[i - 1]
-            );
-
-            if (seg >= remaining)
+            if (segmentLengths[i] >= remaining)
             {
-                float t = remaining / seg;
-                return Vector3.Lerp(
-                    positionHistory[i],
-                    positionHistory[i - 1],
-                    t
-                );
+                Vector3 a = loop[i].worldPos;
+                Vector3 b = loop[(i + 1) % loop.Count].worldPos;
+                float t = remaining / segmentLengths[i];
+                return Vector3.Lerp(a, b, t);
             }
 
-            remaining -= seg;
+            remaining -= segmentLengths[i];
         }
 
-        return positionHistory[0];
+        return loop[^1].worldPos;
+    }
+
+    Vector3 GetDirectionAtDistance(float distance)
+    {
+        float remaining = distance;
+
+        for (int i = 0; i < segmentLengths.Count; i++)
+        {
+            if (segmentLengths[i] >= remaining)
+            {
+                Vector3 a = loop[i].worldPos;
+                Vector3 b = loop[(i + 1) % loop.Count].worldPos;
+                return (b - a).normalized;
+            }
+
+            remaining -= segmentLengths[i];
+        }
+
+        return (loop[1].worldPos - loop[0].worldPos).normalized;
     }
 
     // =============================
-   
+    float FindClosestDistanceOnLoop(Vector3 pos)
+    {
+        float bestDist = float.MaxValue;
+        float bestDistance = 0f;
+        float accumulated = 0f;
+
+        for (int i = 0; i < loop.Count; i++)
+        {
+            Vector3 a = loop[i].worldPos;
+            Vector3 b = loop[(i + 1) % loop.Count].worldPos;
+
+            Vector3 proj = ProjectPointOnLineSegment(a, b, pos);
+            float d = Vector3.Distance(pos, proj);
+
+            if (d < bestDist)
+            {
+                bestDist = d;
+                bestDistance = accumulated + Vector3.Distance(a, proj);
+            }
+
+            accumulated += segmentLengths[i];
+        }
+
+        return bestDistance;
+    }
+
+    Vector3 ProjectPointOnLineSegment(Vector3 a, Vector3 b, Vector3 point)
+    {
+        Vector3 ab = b - a;
+        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
+        t = Mathf.Clamp01(t);
+        return a + ab * t;
+    }
 }

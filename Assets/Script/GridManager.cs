@@ -15,8 +15,9 @@ public class GridManager : MonoBehaviour
     [SerializeField] private float cellSize = 1f;
     public LevelData levelData;
     [SerializeField] private bool showLevelPreview = true;
-    [SerializeField] private Color previewWalkable = new Color(0f, 1f, 0f, 0.3f);
-    [SerializeField] private Color previewBlocked = new Color(1f, 0f, 0f, 0.4f);
+    public Color newUnlock = new Color(0f, 1f, 0f, 0.3f);
+    public Color previewWalkable = new Color(0f, 1f, 0f, 0.3f);
+    public Color previewBlocked = new Color(1f, 0f, 0f, 0.4f);
 
     public GridNode[,] Grid { get; private set; } // 2D array now
     public static event System.Action OnLoopUpdated;
@@ -29,7 +30,7 @@ public class GridManager : MonoBehaviour
         ClearGrid();
         BuildGrid();
         preComputedLoop.PrecomputeLoop();
-     Invoke(nameof(Rails),0.1f);
+        Invoke(nameof(Rails),0.1f);
     }
 
     private void Rails()
@@ -188,21 +189,47 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < cols; y++)
             {
                 bool isWalkable = true;
+                bool isNewUnlock = false;
+
                 Vector3 pos = transform.position + new Vector3(x * cellSize, 0f, y * cellSize);
 
-                if (Grid != null)
+                if (Grid != null && Grid[x, y] != null)
+                {
                     isWalkable = Grid[x, y].walkable;
+                    isNewUnlock = Grid[x, y].NewUnlock; // ✅ FIX
+                }
                 else
                 {
                     GridCell cell = levelData.GetCell(x, y);
-                    if (cell != null) isWalkable = cell.walkable;
+                    if (cell != null)
+                        isWalkable = cell.walkable;
                 }
 
-                Gizmos.color = isWalkable ? previewWalkable : previewBlocked;
-                Gizmos.DrawCube(pos + new Vector3(0, 0.05f, 0), new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
-                Gizmos.color = isWalkable ? Color.green : Color.red;
-                Gizmos.DrawWireCube(pos + new Vector3(0, 0.05f, 0), new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
+                // -------- FILL COLOR --------
+                if (isNewUnlock)
+                    Gizmos.color = newUnlock;          // NEW UNLOCK
+                else if (isWalkable)
+                    Gizmos.color = previewWalkable;       // WALKABLE
+                else
+                    Gizmos.color = previewBlocked;        // BLOCKED
+
+                Gizmos.DrawCube(
+                    pos + new Vector3(0, 0.05f, 0),
+                    new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f)
+                );
+
+                // -------- WIRE COLOR --------
+                if (isNewUnlock)
+                    Gizmos.color = newUnlock;
+                else
+                    Gizmos.color = isWalkable ? previewWalkable : previewBlocked;
+
+                Gizmos.DrawWireCube(
+                    pos + new Vector3(0, 0.05f, 0),
+                    new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f)
+                );
             }
         }
     }
+
 }
